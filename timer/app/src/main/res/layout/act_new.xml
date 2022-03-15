@@ -1,0 +1,234 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/white">
+
+    <include layout="@layout/layout_title"/>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/dp_1"
+        android:background="@color/gray_line"/>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scrollbars="none"
+        android:fillViewport="true">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingLeft="@dimen/dp_10"
+            android:paddingRight="@dimen/dp_10"
+            android:paddingTop="@dimen/dp_30"
+            android:orientation="vertical">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="@dimen/sp_16"
+                android:text="比赛名称:"
+                android:textColor="@color/black"/>
+            <EditText
+                android:id="@+id/et_race"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingTop="@dimen/dp_5"
+                android:paddingBottom="@dimen/dp_5"
+                android:paddingLeft="@dimen/dp_10"
+                android:layout_marginTop="@dimen/dp_10"
+                android:textSize="@dimen/sp_16"
+                android:hint="请输入比赛名称"
+                android:background="@drawable/shape_solid_white_corner_25" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="@dimen/sp_16"
+                android:layout_marginTop="@dimen/dp_10"
+                android:text="项目名称:"
+                android:textColor="@color/black"/>
+            <EditText
+                android:id="@+id/et_project"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingTop="@dimen/dp_5"
+                android:paddingBottom="@dimen/dp_5"
+                android:paddingLeft="@dimen/dp_10"
+                android:layout_marginTop="@dimen/dp_10"
+                android:textSize="@dimen/sp_16"
+                android:hint="请输入项目名称"
+                android:background="@drawable/shape_solid_white_corner_25" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="@dimen/sp_16"
+                android:layout_marginTop="@dimen/dp_10"
+                android:text="年级:"
+                android:textColor="@color/black"/>
+            <EditText
+                android:id="@+id/et_grade"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingTop="@dimen/dp_5"
+                android:paddingBottom="@dimen/dp_5"
+                android:paddingLeft="@dimen/dp_10"
+                android:layout_marginTop="@dimen/dp_10"
+                android:inputType=""
+                android:textSize="@dimen/sp_16"
+                android:hint="请选择年级"
+                android:background="@drawable/shape_solid_white_corner_25" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="@dimen/sp_16"
+                android:text="组数:"
+                android:layout_marginTop="@dimen/dp_10"
+                android:textColor="@color/black"/>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/dp_10"
+                android:orientation="horizontal">
+                <TextView
+                    android:id="@+id/tv_subtract_group"
+                    android:layout_width="@dimen/dp_40"
+                    android:layout_height="wrap_content"
+                    android:textSize="@dimen/sp_18"
+                    android:gravity="center"
+                    android:layout_marginRight="@dimen/dp__0_5"
+                    android:paddingTop="@dimen/dp_5"
+                    android:paddingBottom="@dimen/dp_5"
+                    android:paddingLeft="@dimen/dp_15"
+                    android:paddingRight="@dimen/dp_15"
+                    android:text="-"
+                    android:background="@drawable/shape_black_stroke"
+                    android:textColor="@color/background"/>
+
+                <EditText
+                    android:id="@+id/et_group"
+                    android:layout_width="@dimen/dp_50"
+                    android:layout_height="wrap_content"
+                    android:paddingTop="@dimen/dp_5"
+                    android:paddingBottom="@dimen/dp_5"
+                    android:paddingLeft="@dimen/dp_20"
+                    android:paddingRight="@dimen/dp_20"
+                    android:inputType="number"
+                    android:textSize="@dimen/sp_18"
+                    android:text="1"
+                    android:background="@drawable/shape_black_stroke" />
+                <TextView
+                    android:id="@+id/tv_add_group"
+                    android:layout_width="@dimen/dp_40"
+                    android:layout_height="wrap_content"
+                    android:textSize="@dimen/sp_18"
+                    android:layout_marginLeft="@dimen/dp__0_5"
+                    android:gravity="center"
+                    android:paddingTop="@dimen/dp_5"
+                    android:paddingBottom="@dimen/dp_5"
+                    android:paddingLeft="@dimen/dp_15"
+                    android:paddingRight="@dimen/dp_15"
+                    android:text="+"
+                    android:background="@drawable/shape_black_stroke"
+                    android:textColor="@color/background"/>
+
+            </LinearLayout>
+
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="@dimen/sp_16"
+                android:layout_marginTop="@dimen/dp_10"
+                android:text="每组道数:"
+                android:textColor="@color/black"/>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/dp_10"
+                android:orientation="horizontal">
+                <TextView
+                    android:id="@+id/tv_subtract_number"
+                    android:layout_width="@dimen/dp_40"
+                    android:layout_height="wrap_content"
+                    android:textSize="@dimen/sp_18"
+                    android:layout_marginRight="@dimen/dp__0_5"
+                    android:gravity="center"
+                    android:paddingTop="@dimen/dp_5"
+                    android:paddingBottom="@dimen/dp_5"
+                    android:paddingLeft="@dimen/dp_15"
+                    android:paddingRight="@dimen/dp_15"
+                    android:text="-"
+                    android:background="@drawable/shape_black_stroke"
+                    android:textColor="@color/background"/>
+
+                <EditText
+                    android:id="@+id/et_number"
+                    android:layout_width="@dimen/dp_50"
+                    android:layout_height="wrap_content"
+                    android:paddingTop="@dimen/dp_5"
+                    android:paddingBottom="@dimen/dp_5"
+                    android:paddingLeft="@dimen/dp_20"
+                    android:paddingRight="@dimen/dp_20"
+                    android:inputType="number"
+                    android:textSize="@dimen/sp_18"
+                    android:text="1"
+                    android:background="@drawable/shape_black_stroke" />
+                <TextView
+                    android:id="@+id/tv_add_number"
+                    android:layout_width="@dimen/dp_40"
+                    android:layout_height="wrap_content"
+                    android:textSize="@dimen/sp_18"
+                    android:layout_marginLeft="@dimen/dp__0_5"
+                    android:gravity="center"
+                    android:paddingTop="@dimen/dp_5"
+                    android:paddingBottom="@dimen/dp_5"
+                    android:paddingLeft="@dimen/dp_15"
+                    android:paddingRight="@dimen/dp_15"
+                    android:text="+"
+                    android:background="@drawable/shape_black_stroke"
+                    android:textColor="@color/background"/>
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="bottom"
+                android:paddingBottom="@dimen/dp_10"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/tv_save"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="@dimen/dp_50"
+                    android:textSize="@dimen/sp_16"
+                    android:layout_marginRight="@dimen/dp_20"
+                    android:text="保存"
+                    android:gravity="center"
+                    android:background="@drawable/shape_background_corners_5"
+                    android:textColor="@color/white"/>
+
+                <TextView
+                    android:id="@+id/tv_cancel"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="@dimen/dp_50"
+                    android:textSize="@dimen/sp_16"
+                    android:text="取消"
+                    android:gravity="center"
+                    android:background="@drawable/shape_white_stroke_corners_5"
+                    android:textColor="@color/black"/>
+
+
+            </LinearLayout>
+
+
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>

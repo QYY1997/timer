@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/shape_corner_5"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/shape_solid_white_top_corner_25"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerHorizontal="true"
+                android:layout_marginTop="@dimen/dp_10"
+                android:layout_marginBottom="@dimen/dp_10"
+                android:text="请选择视频帧数"
+                android:textColor="@color/gray_888"
+                android:textSize="@dimen/sp_14" />
+
+        </RelativeLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/dp_1"
+            android:background="@color/gray_line"
+            android:visibility="visible" />
+
+            <RelativeLayout
+                android:id="@+id/rl_30"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/dp_40"
+                android:background="@color/white">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:drawablePadding="@dimen/dp_10"
+                    android:gravity="center_vertical"
+                    android:layout_centerHorizontal="true"
+                    android:text="30FPS"
+                    android:textColor="@color/background" />
+
+            </RelativeLayout>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/dp_1"
+                android:background="@color/gray_line" />
+
+            <RelativeLayout
+                android:id="@+id/rl_120"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/dp_40"
+                android:visibility="gone"
+                android:background="@color/white">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:drawablePadding="@dimen/dp_10"
+                    android:gravity="center_vertical"
+                    android:layout_centerHorizontal="true"
+                    android:text="100FPS"
+                    android:textColor="@color/background" />
+
+            </RelativeLayout>
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/dp_1"
+            android:background="@color/gray_line" />
+
+        <RelativeLayout
+            android:id="@+id/rl_240"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/dp_40"
+            android:visibility="gone"
+            android:background="@color/white">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:drawablePadding="@dimen/dp_10"
+                android:gravity="center_vertical"
+                android:layout_centerHorizontal="true"
+                android:text="200FPS"
+                android:textColor="@color/background" />
+
+        </RelativeLayout>
+
+
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/dp_10"
+        android:background="@color/gray_line"/>
+    <RelativeLayout
+        android:id="@+id/rl_cancel"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/dp_40"
+        android:background="@color/white">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:drawablePadding="@dimen/dp_10"
+            android:gravity="center_vertical"
+            android:layout_centerHorizontal="true"
+            android:text="取消"
+            android:textColor="@color/black" />
+
+    </RelativeLayout>
+</LinearLayout>

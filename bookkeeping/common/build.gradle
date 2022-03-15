@@ -1,0 +1,30 @@
+ apply plugin: 'com.android.library'
+
+android {
+    compileSdkVersion 28
+    buildToolsVersion "28.0.3"
+
+    defaultConfig {
+        minSdkVersion 10
+        targetSdkVersion 28
+        versionCode 15
+        versionName "1.8.0"
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+        applicationVariants {
+        }
+    }
+}
+
+dependencies {
+    implementation 'androidx.recyclerview:recyclerview:1.0.0'
+    implementation 'androidx.appcompat:appcompat:1.0.0'
+    compileOnly files('libs/pinyin4j-2.5.0.jar')
+//    implementation 'com.trello:rxlifecycle:1.0'
+//    implementation 'com.trello:rxlifecycle-components:1.0'
+    implementation 'com.github.yyued:SVGAPlayer-Android:2.0.0'
+}

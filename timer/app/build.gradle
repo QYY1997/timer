@@ -1,0 +1,100 @@
+apply plugin: 'com.android.application'
+
+android {
+    signingConfigs {
+        release {
+            storeFile file('../app/timer.jks')
+            keyAlias = 'timer'
+            storePassword '123456'
+            keyPassword '123456'
+        }
+    }
+    compileSdkVersion 28
+    defaultConfig {
+        applicationId "com.timer.com"
+        minSdkVersion 22
+        targetSdkVersion 28
+        versionCode 1
+        versionName "1.0.0"
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        externalNativeBuild {
+            cmake {
+                cppFlags ""
+            }
+        }
+        ndk {
+            abiFilters 'armeabi-v7a'
+        }
+        signingConfig signingConfigs.debug
+    }
+    sourceSets {
+        main {
+            jniLibs.srcDirs = ['src/main/cpp/ffmpeg/prebuilt/']
+        }
+    }
+    externalNativeBuild {
+        cmake {
+            version '3.6.0'
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release
+        }
+        debug {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release
+        }
+        applicationVariants.all { variant ->
+            variant.outputs.all {
+                if (variant.name.endsWith("release")) {
+                    outputFileName = "timer_${variant.getVersionName()}_${getCurrentTime()}.apk"
+                }
+            }
+        }
+    }
+    externalNativeBuild {
+        cmake {
+            path "src/main/cpp/CMakeLists.txt"
+        }
+    }
+    compileOptions {
+        targetCompatibility 1.8
+        sourceCompatibility 1.8
+    }
+}
+//获取当前时间
+def getCurrentTime() {
+    return new Date().format("yyyy-MM-dd-HH-mm", TimeZone.getTimeZone("GMT+8"))
+}
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation 'com.android.support:support-v4:28.0.0'
+    implementation 'com.android.support:design:28.0.0'
+    implementation 'com.android.support:recyclerview-v7:28.0.0'
+    implementation 'com.android.support:cardview-v7:28.0.0'
+    implementation 'com.android.support:appcompat-v7:28.0.0'
+    implementation 'com.android.support.constraint:constraint-layout:1.1.3'
+    implementation 'com.github.CymChad:BaseRecyclerViewAdapterHelper:2.9.40'
+    implementation 'com.github.bumptech.glide:glide:3.7.0'
+//    implementation 'com.github.bumptech.glide:okhttp3-integration:1.5.0@aar'
+    implementation 'com.android.support.constraint:constraint-layout:1.1.3'
+    implementation 'com.alibaba:fastjson:1.2.7'
+    testImplementation 'junit:junit:4.12'
+    implementation 'com.lzy.net:okgo:3.0.4'
+    implementation 'com.lzy.net:okserver:2.0.5'
+    implementation 'org.greenrobot:eventbus:3.0.0'
+    androidTestImplementation 'com.android.support.test:runner:1.0.2'
+    androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
+    implementation 'com.jakewharton:butterknife:8.8.1'
+    annotationProcessor 'com.jakewharton:butterknife-compiler:8.8.1'
+    implementation 'com.google.code.gson:gson:2.8.6'
+    compile 'com.github.bumptech.glide:glide:3.7.0'
+    implementation 'com.lsjwzh:materialloadingprogressbar:0.5.8-RELEASE'
+}
+repositories {
+    mavenCentral()
+}

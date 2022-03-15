@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="@dimen/dp_65">
+    <TextView
+        android:id="@+id/tv_left"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:padding="@dimen/dp_5"
+        android:textSize="@dimen/sp_12"
+        android:text="返回"
+        android:drawableTint="@color/background"
+        android:gravity="center"
+        android:layout_marginLeft="@dimen/dp_5"
+        android:drawablePadding="@dimen/dp_5"
+        android:drawableLeft="@drawable/title_left_arrow"
+        android:textColor="@color/background"/>
+    <TextView
+        android:id="@+id/tv_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="@dimen/dp_5"
+        android:ellipsize="end"
+        android:maxWidth="@dimen/dp_250"
+        android:singleLine="true"
+        android:text=""
+        android:textColor="@color/black"
+        android:textSize="@dimen/sp_18" />
+
+
+    <TextView
+        android:id="@+id/tv_right"
+        android:layout_width="wrap_content"
+        android:layout_height="@dimen/dp_40"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentBottom="true"
+        android:paddingRight="@dimen/dp_5"
+        android:paddingBottom="@dimen/dp_5"
+        android:layout_marginRight="@dimen/dp_10"
+        android:gravity="bottom"
+        android:visibility="gone"
+        android:text="新增"
+        android:textColor="@color/background"
+        android:textSize="@dimen/sp_14" />
+    <TextView
+        android:id="@+id/tv_right2"
+        android:layout_width="wrap_content"
+        android:layout_height="@dimen/dp_40"
+        android:layout_alignParentBottom="true"
+        android:paddingRight="@dimen/dp_5"
+        android:paddingBottom="@dimen/dp_5"
+        android:layout_marginRight="@dimen/dp_10"
+        android:gravity="bottom"
+        android:visibility="gone"
+        android:text="退出"
+        android:layout_toLeftOf="@+id/tv_right"
+        android:textColor="@color/background"
+        android:textSize="@dimen/sp_14"/>
+</RelativeLayout>

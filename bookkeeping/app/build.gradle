@@ -1,0 +1,97 @@
+apply plugin: 'com.android.application'
+
+android {
+    signingConfigs {
+        release {
+            storeFile file('../app/bookkeeping.jks')
+            keyAlias 'qiuyiyang'
+            keyPassword 'qiou948489823'
+            storePassword 'qiou13505767263'
+        }
+    }
+    compileSdkVersion 28
+    buildToolsVersion '28.0.3'
+
+    defaultConfig {
+        applicationId "com.bookkeeping.myapplication"
+        minSdkVersion 21
+        targetSdkVersion 26
+        ndk {
+            //选择要添加的对应cpu类型的.so库。
+            abiFilters 'armeabi', 'armeabi-v7a', 'armeabi-v8a'
+            // 还可以添加 'x86', 'x86_64', 'mips', 'mips64'
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.release//签名
+        }
+        debug {
+            minifyEnabled false
+            signingConfig signingConfigs.release//签名
+        }
+        applicationVariants.all { variant ->
+            variant.outputs.all {
+                if (variant.name.endsWith("release")) {
+                    outputFileName = "bookkeeping_${variant.getVersionName()}_${getCurrentTime()}.apk"
+                }
+            }
+        }
+    }
+    compileOptions {
+        sourceCompatibility 1.8
+        targetCompatibility 1.8
+    }
+}
+//获取当前时间
+def getCurrentTime() {
+    return new Date().format("yyyy-MM-dd-HH-mm", TimeZone.getTimeZone("GMT+8"))
+}
+repositories {
+    flatDir {
+        dirs 'libs'
+    }
+}
+dependencies {
+
+    implementation fileTree(dir: "libs", include: ["*.jar","*.aar"])
+    implementation 'androidx.legacy:legacy-support-v4:1.0.0'
+    implementation 'com.google.android.material:material:1.0.0'
+    implementation 'androidx.recyclerview:recyclerview:1.1.0'
+    implementation 'androidx.cardview:cardview:1.0.0'
+    implementation 'androidx.appcompat:appcompat:1.1.0'
+    implementation 'com.alibaba:fastjson:1.2.7'
+    implementation 'com.scwang.smartrefresh:SmartRefreshLayout:1.0.4'
+    implementation 'com.scwang.smartrefresh:SmartRefreshHeader:1.0.4'
+    implementation "com.jakewharton:butterknife:10.2.3"
+    annotationProcessor "com.jakewharton:butterknife-compiler:10.2.3"
+    implementation 'org.greenrobot:eventbus:3.0.0'
+    implementation project(':common')
+    implementation files('libs/pinyin4j-2.5.0.jar')
+    implementation 'com.guaishou.bzlib:bzcommon:1.1.16@aar'
+    implementation 'com.guaishou.bzlib:bzyuv:1.1.17@aar'
+    implementation 'com.guaishou.bzlib:bzmedia:1.0.10@aar'
+    implementation 'com.guaishou.bzlib:bzcamera:1.0.23@aar'
+    implementation files('libs/tbs_sdk_thirdapp_v3.6.0.1371_43624_sharewithdownload_withoutGame_obfs_20181106_121046.jar')
+    implementation files('libs/geetest_sensebot_android_v4.3.4.1_20210706.aar')
+    implementation 'com.github.bumptech.glide:glide:3.7.0'
+    implementation 'com.github.bumptech.glide:okhttp3-integration:1.5.0@aar'
+    implementation files('libs/zxing.jar')
+    implementation 'com.lsjwzh:materialloadingprogressbar:0.5.8-RELEASE'
+    implementation 'com.github.CarGuo.GSYVideoPlayer:GSYVideoPlayer:v8.1.7-release-jitpack'
+    implementation 'nl.bravobit:android-ffmpeg:1.1.7'
+    implementation 'com.github.ctiao:DanmakuFlameMaster:0.9.25'
+    implementation 'com.google.code.gson:gson:2.8.7'
+    implementation 'com.github.CymChad:BaseRecyclerViewAdapterHelper:2.9.40'
+    implementation 'com.contrarywind:Android-PickerView:4.1.9'
+    implementation 'com.contrarywind:wheelview:4.1.0'
+    implementation 'com.github.paradoxie:AutoVerticalTextview:0.1'
+    implementation 'androidx.constraintlayout:constraintlayout:1.1.3'
+    implementation 'com.lzy.net:okgo:3.0.4'
+    implementation 'com.lzy.net:okserver:2.0.5'
+    implementation 'org.greenrobot:eventbus:3.0.0'
+    api('com.cysion:ImagePicker:1.0.6') {
+        exclude group: 'com.android.support'
+    }
+}

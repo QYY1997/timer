@@ -1,0 +1,44 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/rl_container"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/gray_bg_f6">
+
+    <include
+        android:id="@+id/setting_common_back"
+        layout="@layout/layout_title" />
+
+    <RelativeLayout
+        android:id="@+id/relative_empty"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@+id/setting_common_back"
+        android:visibility="gone">
+        <include
+            layout="@layout/layout_empty"/>
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:id="@+id/relative_webview"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@+id/setting_common_back">
+        <ProgressBar
+            android:id="@+id/progressBar1"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="2dip"
+
+            android:progressDrawable="@drawable/pg"
+            android:visibility="gone"
+
+            />
+
+        <com.bookkeeping.myapplication.view.X5WebView
+            android:id="@+id/webview"
+            android:layout_below="@+id/progressBar1"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"/>
+    </RelativeLayout>
+
+</RelativeLayout>

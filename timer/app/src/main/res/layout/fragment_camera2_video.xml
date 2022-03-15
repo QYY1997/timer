@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <com.timer.com.AutoFitTextureView
+        android:id="@+id/mTextureView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_alignParentBottom="true" />
+
+    <TextView
+        android:id="@+id/tv_video_time"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="@dimen/sp_18"
+        android:layout_alignParentRight="true"
+        android:text=""
+        android:layout_alignTop="@+id/mTextureView"
+        android:layout_marginRight="@dimen/dp_20"
+        android:layout_marginTop="@dimen/dp_10"
+        android:textColor="@color/red"/>
+
+    <TextView
+        android:id="@+id/tv_delay_time"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="@dimen/sp_60"
+        android:text="0"
+        android:visibility="gone"
+        android:layout_centerInParent="true"
+        android:textColor="@color/red"/>
+
+
+    <TextView
+        android:id="@+id/record_controller"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:layout_centerInParent="true"
+        android:background="@drawable/small_video_shoot"
+        android:gravity="center"
+        android:text="开始"
+        android:layout_gravity="center"
+        android:layout_alignParentBottom="true"
+        android:layout_marginBottom="20dp"
+        android:textColor="@color/camera_progress_three"
+        android:textSize="12sp" />
+</RelativeLayout>
