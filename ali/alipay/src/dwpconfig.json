@@ -1,0 +1,45 @@
+{
+	"project":{
+		"name":"QYY",
+		"version":"V1.0",
+		"date":"2020-3-18",
+		"sysInitorCls":"com.alipay.config.ProjectStarter"
+	},
+	"taskprocessor":{
+		"keyParamName":"key",
+		"singleInstance":true,
+		"basepkg":[
+			"com.alipay.tps"
+		],
+		"mapper":[
+			
+		]
+	},
+	"datasource":[
+		{
+			"id":"alipay",
+			"type":"sqlite",
+			"enabled":true,
+			"default":true,
+			"showsql":true,
+			"driver":"org.sqlite.JDBC",
+			"url":"jdbc:sqlite://D:/Q/ali/alipay.db",
+			"user":"root",
+			"pass":"123456",
+			"poolParams":{
+				"initialSize":2,
+				"maxIdle":5,
+				"minIdle":1,
+				"maxActive":10,
+				"maxWait":30000
+			}
+		}
+	],
+	"fileupload":{
+		"basedir":"uploadfiles",
+		"format":true,
+		"subdirs":[
+			
+		]
+	}
+}
