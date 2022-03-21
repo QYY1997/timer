@@ -606,12 +606,19 @@ public class TranscodeActivity extends BaseActivity {
                 @Override
                 public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                     tvTitle.setText(Gutil.parseTimeMillis(addTime + progress + delayTime));
-                    ivCover.setImageBitmap(MediaTool.getVideoFrame(path, progress*1000));
+//                    ivCover.setImageBitmap(MediaTool.getVideoFrame(path, progress*1000));
+                    if (fromUser){
+                        ivCover.setVisibility(View.GONE);
+                        surfaceview.setVisibility(View.VISIBLE);
+                        ivCover.setImageDrawable(null);
+                        mPlayer.seekTo(progress);
+                        mPlayer.pause();
+                    }
                 }
 
                 @Override
                 public void onStartTrackingTouch(SeekBar seekBar) {
-                    play(false);
+
                 }
 
                 @Override

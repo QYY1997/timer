@@ -138,7 +138,7 @@ public class FFmpegCmd {
      * @return 剪切后的文件
      */
     public static void cutVideo(String srcFile, String  startTime, String duration,String targetFile){
-        String cutVideoCmd = "ffmpeg -y -ss %s -i %s -t %s %s";
+        String cutVideoCmd = "ffmpeg -y -ss %s -i %s -t %s -c copy %s";
         cutVideoCmd = String.format(cutVideoCmd,startTime, srcFile,duration,targetFile);
         Log.i("TAG", "cutVideo: " + cutVideoCmd);
         run(cutVideoCmd.split(" "));

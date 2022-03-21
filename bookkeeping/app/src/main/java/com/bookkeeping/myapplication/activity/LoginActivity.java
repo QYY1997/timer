@@ -26,6 +26,8 @@ import com.bookkeeping.myapplication.util.CommonUtils;
 import com.bookkeeping.myapplication.util.StorageCustomerInfo02Util;
 import com.bookkeeping.myapplication.util.StringUtil;
 import com.bookkeeping.myapplication.util.okgo.OkClient;
+import com.bookkeeping.myapplication.view.CodeDialog;
+import com.bookkeeping.myapplication.view.HintDialog;
 import com.geetest.sdk.GT3ConfigBean;
 import com.geetest.sdk.GT3ErrorBean;
 import com.geetest.sdk.GT3GeetestUtils;
@@ -142,6 +144,7 @@ public class LoginActivity extends BaseActivity {
                 loadKey(resultModel);
                 gt3GeetestUtils.destory();
                 gt3ConfigBean=null;
+                loadData();
             }
 
             @Override
@@ -181,7 +184,6 @@ public class LoginActivity extends BaseActivity {
         OkClient.getInstance().get("https://passport.bilibili.com/x/passport-login/captcha", httpParams, new OkClient.EntityCallBack<ResponseModel>(context, ResponseModel.class) {
             @Override
             public void onError(Response<ResponseModel> response) {
-                loadData();
                 super.onError(response);
             }
 
@@ -190,7 +192,6 @@ public class LoginActivity extends BaseActivity {
                 super.onSuccess(response);
                 ResponseModel model = response.body();
                 if (model == null) {
-                    loadData();
                     return;
                 }
                 if (model.getCode() == 0) {
@@ -202,9 +203,6 @@ public class LoginActivity extends BaseActivity {
                     } catch (JSONException e) {
                         e.printStackTrace();
                     }
-                }
-                else {
-                    loadData();
                 }
             }
         });
@@ -247,7 +245,6 @@ public class LoginActivity extends BaseActivity {
             @Override
             public void onError(Response<ResponseModel> response) {
                 super.onError(response);
-                loadData();
             }
 
             @Override
@@ -255,7 +252,6 @@ public class LoginActivity extends BaseActivity {
                 super.onSuccess(response);
                 ResponseModel model = response.body();
                 if (model == null) {
-                    loadData();
                     return;
                 }
                 if (model.getCode() == 0) {
@@ -270,11 +266,27 @@ public class LoginActivity extends BaseActivity {
                         }
                         StorageCustomerInfo02Util.putInfo(context,"cookies",cookies);
                         startActivity(new Intent(context, HomeNewActivity.class));
+                    }else {
+                        String[] url=loginModel.getUrl().split("\\?")[1].split("&");
+                        String token="",id="",source="";
+                        for (int i=0;i<url.length;i++){
+                            String[] value=url[i].split("=");
+                            if (value[0].equals("tmp_token")){
+                                token=value[1];
+                            }else if (value[0].equals("requestId")){
+                                id=value[1];
+                            }else if (value[0].equals("source")){
+                                source=value[1];
+                            }
+                        }
+                        if (!StringUtil.isEmpty(token)&&!StringUtil.isEmpty(id)) {
+                            CodeDialog codeDialog = CodeDialog.getInstance(token, id, source);
+                            codeDialog.show(getSupportFragmentManager(), "");
+                        }
                     }
                 }
                 else {
                     Toast.makeText(context,model.getMessage(),Toast.LENGTH_LONG).show();
-                    loadData();
                 }
             }
         });

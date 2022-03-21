@@ -16,6 +16,7 @@ public class LoginModel {
     private int status;
     private String message;
     private String url;
+    private String code;
 
     public int getStatus() {
         return status;
@@ -39,5 +40,13 @@ public class LoginModel {
 
     public void setUrl(String url) {
         this.url = (url == null ? "" : url);
+    }
+
+    public String getCode() {
+        return code == null ? "" : code;
+    }
+
+    public void setCode(String code) {
+        this.code = (code == null ? "" : code);
     }
 }
