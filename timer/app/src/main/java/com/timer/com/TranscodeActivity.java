@@ -16,12 +16,14 @@ import android.media.AudioAttributes;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
 import android.provider.MediaStore;
 import android.support.annotation.Nullable;
+import android.support.annotation.RequiresApi;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.content.FileProvider;
@@ -147,9 +149,9 @@ public class TranscodeActivity extends BaseActivity {
     LinearLayout llRedLine;
 
     private String mVideoPath;
-    private String path;
-    private List<String> paths = new ArrayList<>();
-    private List<VideoInfo> videos = new ArrayList<>();
+//    private String path;
+//    private List<String> paths = new ArrayList<>();
+//    private List<VideoInfo> videos = new ArrayList<>();
     private List<EnRollModel> enRollModelList1 = new ArrayList<>();
     private List<EnRollModel> enRollModelList2 = new ArrayList<>();
     private VideoInfo mInfo;
@@ -169,13 +171,13 @@ public class TranscodeActivity extends BaseActivity {
     private EnRollListAdapter enRollListAdapter2;
     private MediaPlayer mPlayer;
     private ProgressDialog progressDialog;
-    private int i;
     private int scorePage = 0;
     private String demandId;
     private boolean last, first;
     private long videoTime;
     private long startTime;
     private Integer deviceLevel;
+
     Comparator<EnRollModel> comparator = new Comparator<EnRollModel>() {
         @Override
         public int compare(EnRollModel o1, EnRollModel o2) {
@@ -237,39 +239,47 @@ public class TranscodeActivity extends BaseActivity {
 
     @SuppressLint("HandlerLeak")
     private Handler mHandlers = new Handler() {
+        @RequiresApi(api = Build.VERSION_CODES.O)
         @Override
         public void handleMessage(Message msg) {
             switch (msg.what) {
-                case 1:
-                    File file = new File((String) msg.obj);
-                    if (file != null) {
-                        play(false);
-                        ivCover.setVisibility(View.VISIBLE);
-                        Glide.with(context).load(file).asBitmap().into(new SimpleTarget<Bitmap>() {
-                            @Override
-                            public void onResourceReady(Bitmap resource, GlideAnimation<? super Bitmap> glideAnimation) {
-                                ivCover.setImageBitmap(resource);
-                            }
-                        });
-                    }
-                    loadingDialog.dismiss();
-                    payThread.interrupt();
-                    break;
+//                case 1:
+//                    File file = new File((String) msg.obj);
+//                    if (file != null) {
+//                        play(false);
+//                        ivCover.setVisibility(View.VISIBLE);
+//                        Glide.with(context).load(file).asBitmap().into(new SimpleTarget<Bitmap>() {
+//                            @Override
+//                            public void onResourceReady(Bitmap resource, GlideAnimation<? super Bitmap> glideAnimation) {
+//                                ivCover.setImageBitmap(resource);
+//                            }
+//                        });
+//                    }
+//                    loadingDialog.dismiss();
+//                    payThread.interrupt();
+//                    break;
                 case 2:
                     if (mPlayer.isPlaying()) {
-                        seekBar.setProgress(mPlayer.getCurrentPosition());
+                        if (mPlayer.getCurrentPosition()-addTime>=time){
+                            mPlayer.pause();
+                            mPlayer.seekTo(addTime,MediaPlayer.SEEK_CLOSEST);
+                        }
+                        seekBar.setProgress(mPlayer.getCurrentPosition()-addTime);
                         mHandlers.sendEmptyMessageDelayed(2, 100);
+                    } else {
+                        mHandlers.removeMessages(2);
                     }
                     break;
                 case 3:
-                    MyTask myTask = new MyTask();
-                    myTask.execute();
+//                    MyTask myTask = new MyTask();
+//                    myTask.execute();
+                    surfaceview.setVisibility(View.VISIBLE);
                     break;
-                case 4:
-                    setVideo(paths.get(0));
-                    break;
+//                case 4:
+//                    setVideo(paths.get(0));
+//                    break;
                 case 5:
-                    setVideo(mVideoPath);
+                    setVideo();
                     break;
                 default:
                     break;
@@ -321,34 +331,12 @@ public class TranscodeActivity extends BaseActivity {
         super.onResume();
         llRedLine.setVisibility(StorageCustomerInfoUtil.getBooleanInfo("redLine", context, true) ? View.VISIBLE : View.GONE);
         delayTime = StorageCustomerInfoUtil.getIntInfo(context, "delayTime", 0);
-        videoCount = StorageCustomerInfoUtil.getIntInfo(context, "cut", 8);
+        videoCount = StorageCustomerInfoUtil.getIntInfo(context, "cut", 10);
         autoStart = StorageCustomerInfoUtil.getBooleanInfo("autoStart", context, true);
         yun = StorageCustomerInfoUtil.getBooleanInfo("switchYun", context, true);
         progressDialog = ProgressDialog.getInstance(videoCount);
         enRollListAdapter1.notifyDataSetChanged();
         enRollListAdapter2.notifyDataSetChanged();
-    }
-
-    private void play(boolean play) {
-        if (mPlayer == null) {
-            return;
-        }
-        if (!play) {
-            if (surfaceview.getVisibility() == View.VISIBLE) {
-                surfaceview.setVisibility(View.GONE);
-                ivCover.setVisibility(View.VISIBLE);
-                mHandlers.removeMessages(2);
-                mPlayer.pause();
-            }
-        } else if (play) {
-            ivCover.setVisibility(View.GONE);
-            surfaceview.setVisibility(View.VISIBLE);
-            ivCover.setImageDrawable(null);
-            seekBar.setProgress(0);
-            mPlayer.seekTo(0);
-            mPlayer.start();
-            mHandlers.sendEmptyMessageDelayed(2, 100);
-        }
     }
 
     private void checkPermission() {
@@ -448,11 +436,11 @@ public class TranscodeActivity extends BaseActivity {
                 cursor.moveToFirst();
                 int columnIndex = cursor.getColumnIndex(filePathColumn[0]);
                 mVideoPath = cursor.getString(columnIndex);
-                mHandlers.sendEmptyMessageDelayed(3, 500);
+                mHandlers.sendEmptyMessage(5);
                 cursor.close();
             } else if (requestCode == REQUEST_CAMERA2 || requestCode == SETTING || requestCode == LOCALLIST) {
                 mVideoPath = data.getStringExtra("path");
-                mHandlers.sendEmptyMessageDelayed(3, 500);
+                mHandlers.sendEmptyMessage(5);
                 videoTime=data.getLongExtra("time",0);
                 if (startTime!=0&&videoTime!=0&&yun){
                     delayTime=(int)(videoTime-startTime);
@@ -557,82 +545,104 @@ public class TranscodeActivity extends BaseActivity {
         });
     }
 
-    private void setVideo(String path) {
-        this.path = path;
-        File file = new File(path);
+    @RequiresApi(api = Build.VERSION_CODES.O)
+    private void setVideo() {
+//        this.path = path;
+        deleteDir(basePathVideo);
+        start = 0;
+        end = 0;
+        startPage = 0;
+        endPage = 0;
+        addTime = 0;
+        videoPage = 1;
+        time = 0;
+        addTime=0;
+        File file = new File(mVideoPath);
         if (file != null) {
-            mInfo = FFmpegCmd.getVideoInfo(path);
-            frameRate = 1000 / mInfo.fps;
-            if (mPlayer != null) {
-                mPlayer.reset();
+            mInfo = FFmpegCmd.getVideoInfo(mVideoPath);
+            if (videoCount>1) {
+                time = (int) mInfo.duration / videoCount;
             }
-            mPlayer = MediaPlayer.create(context, FileProvider.getUriForFile(context,"com.timer.com.fileProvider",file));
-            mPlayer.setScreenOnWhilePlaying(true);
-            mPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
-                @Override
-                public void onPrepared(MediaPlayer mp) {
-                    seekBar.setMax(mp.getDuration());
-                    seekBar.setProgress(mp.getCurrentPosition());
-                }
-            });
-            mPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
-                @Override
-                public void onCompletion(MediaPlayer mp) {
-                    mp.seekTo(0);
-                    seekBar.setProgress(0);
-                    play(false);
-                }
-            });
-            surfaceview.getHolder().addCallback(new SurfaceHolder.Callback() {
-                @Override
-                public void surfaceCreated(SurfaceHolder holder) {
-                    mPlayer.setDisplay(holder);
-                }
-
-                @Override
-                public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-                    RelativeLayout.LayoutParams layoutParams = (RelativeLayout.LayoutParams) surfaceview.getLayoutParams();
-                    layoutParams.width = mInfo.width;
-                    layoutParams.height =mInfo.height;
-                    surfaceview.setLayoutParams(layoutParams);
-                }
-
-                @Override
-                public void surfaceDestroyed(SurfaceHolder holder) {
-
-                }
-            });
-            seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-                @Override
-                public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                    tvTitle.setText(Gutil.parseTimeMillis(addTime + progress + delayTime));
-//                    ivCover.setImageBitmap(MediaTool.getVideoFrame(path, progress*1000));
-                    if (fromUser){
-                        ivCover.setVisibility(View.GONE);
-                        surfaceview.setVisibility(View.VISIBLE);
-                        ivCover.setImageDrawable(null);
-                        mPlayer.seekTo(progress);
-                        mPlayer.pause();
-                    }
-                }
-
-                @Override
-                public void onStartTrackingTouch(SeekBar seekBar) {
-
-                }
-
-                @Override
-                public void onStopTrackingTouch(SeekBar seekBar) {
-                    getPic();
-                }
-            });
+            frameRate = 1000 / mInfo.fps;
+            setMediaPlay(file);
             tvNowParagraph.setText("当前：" + videoPage + "/" + videoCount);
             tvNowParagraph.setVisibility(View.VISIBLE);
-            surfaceview.setVisibility(View.GONE);
             ivCover.setVisibility(View.VISIBLE);
-            Bitmap videoFrame = MediaTool.getVideoFrame(path, 2000000);
+            Bitmap videoFrame = MediaTool.getVideoFrame(mVideoPath, 200000);
             ivCover.setImageBitmap(videoFrame);
         }
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.O)
+    private void setMediaPlay(File file){
+        if (mPlayer != null) {
+            mPlayer.reset();
+        }
+        mPlayer = MediaPlayer.create(context, FileProvider.getUriForFile(context,"com.timer.com.fileProvider",file));
+        mPlayer.setScreenOnWhilePlaying(true);
+        mPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
+            @Override
+            public void onPrepared(MediaPlayer mp) {
+                seekBar.setMax(time);
+                seekBar.setProgress(0);
+            }
+        });
+        mPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+            @RequiresApi(api = Build.VERSION_CODES.O)
+            @Override
+            public void onCompletion(MediaPlayer mp) {
+               setMediaPlay(file);
+            }
+        });
+        surfaceview.getHolder().addCallback(new SurfaceHolder.Callback() {
+            @Override
+            public void surfaceCreated(SurfaceHolder holder) {
+                mPlayer.setDisplay(holder);
+            }
+
+            @Override
+            public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
+                RelativeLayout.LayoutParams layoutParams = (RelativeLayout.LayoutParams) surfaceview.getLayoutParams();
+                layoutParams.width = mInfo.width;
+                layoutParams.height =mInfo.height;
+                surfaceview.setLayoutParams(layoutParams);
+            }
+
+            @Override
+            public void surfaceDestroyed(SurfaceHolder holder) {
+
+            }
+        });
+        seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @RequiresApi(api = Build.VERSION_CODES.O)
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                tvTitle.setText(Gutil.parseTimeMillis(addTime + progress + delayTime));
+//                    ivCover.setImageBitmap(MediaTool.getVideoFrame(path, progress*1000));
+                if (!mPlayer.isPlaying()){
+                    ivCover.setVisibility(View.GONE);
+                    surfaceview.setVisibility(View.VISIBLE);
+                    mPlayer.seekTo(addTime + progress,MediaPlayer.SEEK_CLOSEST);
+                }
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+                mPlayer.pause();
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+//                    getPic();
+            }
+        });
+        mPlayer.seekTo(addTime,MediaPlayer.SEEK_CLOSEST);
+        mPlayer.start();
+        mPlayer.pause();
+        seekBar.setProgress(0);
+        surfaceview.setVisibility(View.GONE);
+        mHandlers.sendEmptyMessageDelayed(3,500);
+
     }
 
     public boolean isFastDoubleClick() {
@@ -645,38 +655,37 @@ public class TranscodeActivity extends BaseActivity {
         return false;
     }
 
-    private void getPic() {
-        if (isFastDoubleClick()) {
-            return;
-        }
-        play(false);
-        Runnable payRunnable = new Runnable() {
-            @Override
-            public void run() {
-                deleteDir(basePathPic);
-                String PathPic = basePathPic + "/screenShot" + System.currentTimeMillis() + ".jpg";
-                String size = "";
-                if (mInfo.rotation == 0 || mInfo.rotation == 180) {
-                    size = mInfo.width + "x" + mInfo.height;
-                } else {
-                    size = mInfo.height + "x" + mInfo.width;
-                }
-                FFmpegCmd.screenShot(path,
-                        Gutil.parseTimeMillis(seekBar.getProgress() ==
-                                seekBar.getMax() ? seekBar.getMax() - frameRate : seekBar.getProgress()),
-                        size, mInfo.fps + "", PathPic);
-                File file = new File(PathPic);
-                if (file != null) {
-                    Message msg = new Message();
-                    msg.what = 1;
-                    msg.obj = PathPic;
-                    mHandlers.sendMessage(msg);
-                }
-            }
-        };
-        payThread = new Thread(payRunnable);
-        payThread.start();
-    }
+//    private void getPic() {
+//        if (isFastDoubleClick()) {
+//            return;
+//        }
+//        Runnable payRunnable = new Runnable() {
+//            @Override
+//            public void run() {
+//                deleteDir(basePathPic);
+//                String PathPic = basePathPic + "/screenShot" + System.currentTimeMillis() + ".jpg";
+//                String size = "";
+//                if (mInfo.rotation == 0 || mInfo.rotation == 180) {
+//                    size = mInfo.width + "x" + mInfo.height;
+//                } else {
+//                    size = mInfo.height + "x" + mInfo.width;
+//                }
+//                FFmpegCmd.screenShot(mVideoPath,
+//                        Gutil.parseTimeMillis(seekBar.getProgress() ==
+//                                seekBar.getMax() ? seekBar.getMax() - frameRate : seekBar.getProgress()),
+//                        size, mInfo.fps + "", PathPic);
+//                File file = new File(PathPic);
+//                if (file != null) {
+//                    Message msg = new Message();
+//                    msg.what = 1;
+//                    msg.obj = PathPic;
+//                    mHandlers.sendMessage(msg);
+//                }
+//            }
+//        };
+//        payThread = new Thread(payRunnable);
+//        payThread.start();
+//    }
 
     public static void deleteDir(String path) {
         // 下载位置
@@ -712,10 +721,15 @@ public class TranscodeActivity extends BaseActivity {
         return null;
     }
 
+
+    @RequiresApi(api = Build.VERSION_CODES.O)
     @OnClick({R.id.tv_left, R.id.tv_right, R.id.tv_last_page, R.id.tv_next_page, R.id.tv_last_paragraph,
             R.id.tv_next_paragraph, R.id.tv_choose, R.id.tv_start, R.id.tv_before_n, R.id.tv_before,R.id.tv_sign,
             R.id.tv_previous, R.id.tv_play, R.id.tv_next, R.id.tv_after, R.id.tv_after_n, R.id.tv_end, R.id.tv_recording})
     public void onViewClicked(View view) {
+        if (isFastDoubleClick()){
+            return;
+        }
         switch (view.getId()) {
             case R.id.tv_left:
                 startActivityForResult(new Intent(context, ChooseListActivity.class), CHOOSE);
@@ -744,9 +758,14 @@ public class TranscodeActivity extends BaseActivity {
                 if (videoPage == 1) {
                     return;
                 }
-                addTime -= videos.get(videoPage - 2).duration;
+                addTime -= time;
                 addTime = Math.max(addTime, 0);
-                setVideo(paths.get(videoPage - 2));
+                tvTitle.setText(Gutil.parseTimeMillis(addTime + delayTime));
+                seekBar.setProgress(0);
+                mPlayer.seekTo(addTime,MediaPlayer.SEEK_CLOSEST);
+                ivCover.setVisibility(View.GONE);
+                surfaceview.setVisibility(View.VISIBLE);
+//                setVideo(paths.get(videoPage - 2));
                 videoPage--;
                 if (startPage == videoPage) {
                     ivStartFlag.setVisibility(View.VISIBLE);
@@ -768,8 +787,13 @@ public class TranscodeActivity extends BaseActivity {
                 if (videoPage == videoCount) {
                     return;
                 }
-                addTime += seekBar.getMax();
-                setVideo(paths.get(videoPage));
+                addTime += time;
+                tvTitle.setText(Gutil.parseTimeMillis(addTime + delayTime));
+                seekBar.setProgress(0);
+                mPlayer.seekTo(addTime,MediaPlayer.SEEK_CLOSEST);
+                ivCover.setVisibility(View.GONE);
+                surfaceview.setVisibility(View.VISIBLE);
+//                setVideo(paths.get(videoPage));
                 videoPage++;
                 if (startPage == videoPage) {
                     ivStartFlag.setVisibility(View.VISIBLE);
@@ -815,30 +839,37 @@ public class TranscodeActivity extends BaseActivity {
                 break;
             case R.id.tv_before_n:
                 seekBar.incrementProgressBy(-StorageCustomerInfoUtil.getIntInfo(context, "fpsJump", 1) * frameRate);
-                getPic();
+//                getPic();
                 break;
             case R.id.tv_before:
                 seekBar.incrementProgressBy(-30 * frameRate);
-                getPic();
+//                getPic();
                 break;
             case R.id.tv_previous:
                 seekBar.incrementProgressBy(-frameRate);
-                getPic();
+//                getPic();
                 break;
             case R.id.tv_play:
-                play(true);
+                if (mPlayer == null) {
+                 return;
+                }
+                surfaceview.setVisibility(View.VISIBLE);
+                ivCover.setVisibility(View.GONE);
+                mPlayer.start();
+                mHandlers.sendEmptyMessageDelayed(2, 100);
+//                mPlayer.start();
                 break;
             case R.id.tv_next:
                 seekBar.incrementProgressBy(frameRate);
-                getPic();
+//                getPic();
                 break;
             case R.id.tv_after:
                 seekBar.incrementProgressBy(30 * frameRate);
-                getPic();
+//                getPic();
                 break;
             case R.id.tv_after_n:
                 seekBar.incrementProgressBy(StorageCustomerInfoUtil.getIntInfo(context, "fpsJump", 1) * frameRate);
-                getPic();
+//                getPic();
                 break;
             case R.id.tv_end:
                 if (seekBar != null && !autoStart) {
@@ -852,13 +883,7 @@ public class TranscodeActivity extends BaseActivity {
                     ivEndFlag.setVisibility(View.VISIBLE);
                     ivEndFlag.setX((seekBar.getProgress() * seekBar.getWidth()) / seekBar.getMax() + seekBar.getX() + 2);
                     ivEndFlag.invalidate();
-                    int sumTime = 0;
-                    if (videoCount>1) {
-                        for (int i = startPage; i <= endPage; i++) {
-                            sumTime += videos.get(i - 1).duration;
-                        }
-                    }
-                    tvTitle.setText(Gutil.parseTimeMillis(sumTime + end - start + delayTime));
+                    tvTitle.setText(Gutil.parseTimeMillis((endPage-startPage)*time + end - start + delayTime));
                 }
                 break;
             case R.id.tv_recording:
@@ -871,83 +896,87 @@ public class TranscodeActivity extends BaseActivity {
         }
     }
 
-    class MyTask extends AsyncTask<String, Integer, String> {
-
-        @Override
-        protected void onPostExecute(String result) {
-            //最终结果的显示
-            if (videoCount!=1) {
-                progressDialog.dismiss();
-            }
-//            Toast.makeText(context,result,Toast.LENGTH_SHORT).show();
-        }
-
-        @Override
-        protected void onPreExecute() {
-            //开始前的准备工作
-        }
-
-        @Override
-        protected void onProgressUpdate(Integer... values) {
-            //显示进度
-            if (values[0] == 1) {
-                progressDialog.show(getSupportFragmentManager(), "");
-            }
-            EventBus.getDefault().post(new ProgressEvent(values[0]));
-        }
-
-        @SuppressLint("WrongThread")
-        @Override
-        protected String doInBackground(String... strings) {
-            deleteDir(basePathVideo);
-            paths.clear();
-            start = 0;
-            end = 0;
-            startPage = 0;
-            endPage = 0;
-            addTime = 0;
-            videoPage = 1;
-            time = 0;
-            path = "";
-            File file = new File(mVideoPath);
-            if (file != null) {
-                mInfo = FFmpegCmd.getVideoInfo(mVideoPath);
-                if (videoCount > 1&&mInfo.duration>videoCount*1000) {
-                    time = (int) mInfo.duration / videoCount;
-                    for (i = 0; i < videoCount; i++) {
-                        publishProgress(i + 1);
-                        try{
-                            FFmpegCmd.cutVideo(mVideoPath, Gutil.parseTime(i * time),
-                                    Gutil.parseTime(i == videoCount - 1 ? (int) mInfo.duration - i * time : time), basePathVideo + "/videoCut" + i + ".mp4");
-                        }catch (Exception e){
-                            e.printStackTrace();
-                        }
-                        paths.add(basePathVideo + "/videoCut" + i + ".mp4");
-                        videos.add(FFmpegCmd.getVideoInfo(paths.get(i)));
-                    }
-                }
-                if (paths != null && paths.size() > 0) {
-                    videoPage = 1;
-                    seekBar.setProgress(0);
-                    file = new File(paths.get(0));
-                    if (file != null) {
-                        mHandlers.sendEmptyMessage(4);
-                    } else {
-                        mHandlers.sendEmptyMessage(5);
-                    }
-                } else {
-                    videoPage = 1;
-                    videoCount = 1;
-                    time = (int) mInfo.duration;
-                    mHandlers.sendEmptyMessage(5);
-                    paths = new ArrayList<>();
-                    paths.add(mVideoPath);
-                }
-            }
-            onPostExecute("");
-            return null;
-        }
-    }
+//    class MyTask extends AsyncTask<String, Integer, String> {
+//
+//        @Override
+//        protected void onPostExecute(String result) {
+//            //最终结果的显示
+//            if (videoCount!=1) {
+//                progressDialog.dismiss();
+//            }
+////            Toast.makeText(context,result,Toast.LENGTH_SHORT).show();
+//        }
+//
+//        @Override
+//        protected void onPreExecute() {
+//            //开始前的准备工作
+//        }
+//
+//        @Override
+//        protected void onProgressUpdate(Integer... values) {
+//            //显示进度
+//            if (values[0] == 1) {
+//                progressDialog.show(getSupportFragmentManager(), "");
+//            }
+//            EventBus.getDefault().post(new ProgressEvent(values[0]));
+//        }
+//
+//        @SuppressLint("WrongThread")
+//        @Override
+//        protected String doInBackground(String... strings) {
+//            deleteDir(basePathVideo);
+//            paths.clear();
+//            start = 0;
+//            end = 0;
+//            startPage = 0;
+//            endPage = 0;
+//            addTime = 0;
+//            videoPage = 1;
+//            time = 0;
+//            path = "";
+//            File file = new File(mVideoPath);
+//            if (file != null) {
+//                mInfo = FFmpegCmd.getVideoInfo(mVideoPath);
+//                if (videoCount > 1&&mInfo.duration>videoCount*1000) {
+//                    time = (int) mInfo.duration / videoCount;
+//                    int sumTime=0;
+//                    for (i = 0; i < videoCount; i++) {
+//                        publishProgress(i + 1);
+//                        try{
+//                            FFmpegCmd.cutVideo(mVideoPath, Gutil.parseTime(sumTime),
+//                                    Gutil.parseTime((i+1)*time-sumTime),
+//                                    basePathVideo + "/videoCut" + i + ".mp4");
+//                        }catch (Exception e){
+//                            e.printStackTrace();
+//                        }
+//                        paths.add(basePathVideo + "/videoCut" + i + ".mp4");
+//                        VideoInfo newVideo=FFmpegCmd.getVideoInfo(paths.get(i));
+//                        videos.add(newVideo);
+//                        sumTime+=newVideo.duration;
+//                    }
+//                }
+//                if (paths != null && paths.size() > 0) {
+//                    videoPage = 1;
+//                    seekBar.setProgress(0);
+//                    file = new File(paths.get(0));
+//                    if (file != null) {
+//                        mHandlers.sendEmptyMessage(4);
+//                    } else {
+//                        mHandlers.sendEmptyMessage(5);
+//                    }
+//                } else {
+//                    videoPage = 1;
+//                    videoCount = 1;
+//                    time = (int) mInfo.duration;
+//                    mHandlers.sendEmptyMessage(5);
+//                    paths = new ArrayList<>();
+//                    paths.add(mVideoPath);
+//                }
+//            }
+//            onPostExecute("");
+//            return null;
+//        }
+//    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

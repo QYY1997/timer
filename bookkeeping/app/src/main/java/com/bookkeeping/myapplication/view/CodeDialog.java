@@ -6,7 +6,9 @@ import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -20,6 +22,7 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.DialogFragment;
 
 import com.alibaba.fastjson.JSONObject;
+import com.bookkeeping.myapplication.MyApplication;
 import com.bookkeeping.myapplication.R;
 import com.bookkeeping.myapplication.activity.HomeNewActivity;
 import com.bookkeeping.myapplication.model.bilibili.CodeModel;
@@ -299,7 +302,7 @@ public class CodeDialog extends DialogFragment {
     private void getCode(String code) {
         HttpParams httpParams = new HttpParams();
         httpParams.put("code", code);
-        OkClient.getInstance().post("https://passport.bilibili.com/web/sso/exchange_cookie", httpParams, true,new OkClient.EntityCallBack<ResponseModel>(context, ResponseModel.class) {
+        OkClient.getInstance().get("https://passport.bilibili.com/web/sso/exchange_cookie", httpParams,new OkClient.EntityCallBack<ResponseModel>(context, ResponseModel.class) {
             @Override
             public void onError(Response<ResponseModel> response) {
                 super.onError(response);
@@ -316,13 +319,24 @@ public class CodeDialog extends DialogFragment {
                     LoginModel loginModel = JSONObject.parseObject(model.getData(), LoginModel.class);
                     if (loginModel.getStatus() == 0) {
                         StorageCustomerInfo02Util.putInfo(context, "automaticLogin", true);
-                        List<Cookie> list=new SPCookieStore(context).getAllCookie();
-                        String cookies="";
-                        for(Cookie cookie :list) {
-                            StorageCustomerInfo02Util.putInfo(context,cookie.name(),cookie.value());
-                            cookies+=cookie.name()+"="+cookie.value()+";";
+                        String cookStr="";
+                        List<String> cookies=response.headers().values("set-cookie");
+                       for (int i=0;i<cookies.size();i++){
+                            String session = cookies.get(i);
+                            if (!TextUtils.isEmpty(session)) {
+                                int position = session.indexOf(";");
+                                if (position <  session.length() && position >= 0) {
+                                    String cook=session.substring(0,position);
+                                    if (cook.contains("=")) {
+                                        String[] value = cook.split("=");
+                                        StorageCustomerInfo02Util.putInfo(context, value[0], value[1]);
+                                    }
+                                    cookStr += session.substring(0,position)+";";
+                                }
+                            }
                         }
-                        StorageCustomerInfo02Util.putInfo(context,"cookies",cookies);
+                        StorageCustomerInfo02Util.putInfo(context,"cookies",cookStr);
+                        Log.i("TAG", "onSuccess: "+cookStr);
                         startActivity(new Intent(context, HomeNewActivity.class));
                     }
                 }

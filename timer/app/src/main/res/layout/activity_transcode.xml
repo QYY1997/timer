@@ -35,6 +35,7 @@
                     android:layout_height="wrap_content"
                     android:layout_centerInParent="true"
                     android:adjustViewBounds="true"
+                    android:visibility="gone"
                     android:background="@drawable/border_primary" />
                 <LinearLayout
                     android:id="@+id/ll_red_line"

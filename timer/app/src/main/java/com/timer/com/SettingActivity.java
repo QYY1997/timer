@@ -108,7 +108,7 @@ public class SettingActivity extends BaseActivity {
         tvShutter.setText(StorageCustomerInfoUtil.getLongInfo(context, "km", (long) 0) == 0 ? "自动" : 1000000000/StorageCustomerInfoUtil.getLongInfo(context, "km", (long) 0) + "");
         tvDelayTime.setText(new BigDecimal(StorageCustomerInfoUtil.getIntInfo(context, "delayTime", 0)).divide(new BigDecimal("1000")).setScale(2, BigDecimal.ROUND_HALF_UP).toString() + "s");
         tvShootingDelay.setText(new BigDecimal(StorageCustomerInfoUtil.getIntInfo(context, "shootingDelay", 0)).divide(new BigDecimal("1000")).setScale(2, BigDecimal.ROUND_HALF_UP).toString() + "s");
-        tvCut.setText(StorageCustomerInfoUtil.getIntInfo(context, "cut", 8) + "");
+        tvCut.setText(StorageCustomerInfoUtil.getIntInfo(context, "cut", 10) + "");
         switchAutoStart.setChecked(StorageCustomerInfoUtil.getBooleanInfo("autoStart", context, true));
         switchRedLine.setChecked(StorageCustomerInfoUtil.getBooleanInfo("redLine", context, true));
         switchName.setChecked(StorageCustomerInfoUtil.getBooleanInfo("nameSwitch", context, false));
@@ -268,8 +268,8 @@ public class SettingActivity extends BaseActivity {
                 inputDialog.setOnClickListener(new InputDialog.OnClickListener() {
                     @Override
                     public void onClick(BigDecimal value) {
-                        StorageCustomerInfoUtil.putInfo(context, "cut", Math.min(value.intValue(),8));
-                        tvCut.setText(Math.min(value.intValue(), 8) + "");
+                        StorageCustomerInfoUtil.putInfo(context, "cut", Math.max(Math.min(value.intValue(), 10),1) );
+                        tvCut.setText(Math.max(Math.min(value.intValue(), 10),1) + "");
                     }
                 });
                 inputDialog.show(getSupportFragmentManager(), "");

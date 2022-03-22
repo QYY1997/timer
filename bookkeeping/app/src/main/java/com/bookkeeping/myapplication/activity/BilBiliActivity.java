@@ -32,6 +32,7 @@ import com.bookkeeping.myapplication.model.bilibili.VideoUrlModel;
 import com.bookkeeping.myapplication.util.CommonUtils;
 import com.bookkeeping.myapplication.util.DateUtil;
 import com.bookkeeping.myapplication.util.GlideUtils;
+import com.bookkeeping.myapplication.util.StorageCustomerInfo02Util;
 import com.bookkeeping.myapplication.util.StringUtil;
 import com.bookkeeping.myapplication.util.okHttp.OkHttp3Util;
 import com.bookkeeping.myapplication.util.okgo.OkClient;
@@ -558,10 +559,11 @@ public class BilBiliActivity extends BaseActivity {
 
         file = new File(CommonUtils.getVideoPath());
         Map<String, String> mapHeadData = new HashMap<>();
-        mapHeadData.put("referer", "https://www.bilibili.com/video/" + videoModel.getBvid());
+        mapHeadData.put("Referer", "https://www.bilibili.com/video/" + videoModel.getBvid());
         mapHeadData.put("method", "GET");
+        mapHeadData.put("Sec-Fetch-Mode", "cors");
         mapHeadData.put("Accept", "text/html,application/xhtml+xml,application/xml;video/x-flv;q=0.9,image/webp,*/*;q=0.8");
-        mapHeadData.put("user-agent", "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.90 Safari/537.36");
+        mapHeadData.put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.90 Safari/537.36");
         detailPlayer.setUp(url, false, file, mapHeadData, videoModel.getTitle());
 
         //外部辅助的旋转，帮助全屏
