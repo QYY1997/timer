@@ -9,6 +9,8 @@
         android:layout_height="match_parent"
         android:layout_alignParentBottom="true" />
 
+    <include layout="@layout/layout_title"/>
+
     <TextView
         android:id="@+id/tv_video_time"
         android:layout_width="wrap_content"

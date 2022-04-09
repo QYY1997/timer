@@ -1,6 +1,13 @@
 package com.timer.com;
 
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
+import android.graphics.Matrix;
+import android.graphics.Paint;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -16,6 +23,7 @@ import com.timer.com.util.OkClient;
 import com.timer.com.util.StorageCustomerInfoUtil;
 import com.timer.com.util.StringUtil;
 
+import java.util.Locale;
 import java.util.TreeMap;
 
 import butterknife.BindView;

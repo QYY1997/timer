@@ -171,7 +171,7 @@ public class FFmpegCmd {
         if (s!=null){
             info = new Gson().fromJson(s, VideoInfo.class);
         }
-        Log.i("TranscodeActivityTimer", "getVideoInfo: time:"+info.duration+",fps:"+info.fps);
+        Log.i("TranscodeActivityTimer", "getVideoInfo: time:"+info.duration+",fps:"+info.fps+"/n"+s);
         return info;
     }
 }

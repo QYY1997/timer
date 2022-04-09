@@ -118,6 +118,7 @@ public class MainActivity extends BaseActivity implements SurfaceHolder.Callback
         } else {
             havePermission = false;
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA,
+                    Manifest.permission.READ_EXTERNAL_STORAGE,
                     Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.RECORD_AUDIO}, 100);
         }
         recordController.setOnClickListener(new View.OnClickListener() {

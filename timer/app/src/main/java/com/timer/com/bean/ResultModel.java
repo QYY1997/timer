@@ -16,7 +16,7 @@ public class ResultModel {
     private boolean status;
 
     public DataBean getData() {
-        return data;
+        return data==null?new DataBean():data;
     }
 
     public void setData(DataBean data) {

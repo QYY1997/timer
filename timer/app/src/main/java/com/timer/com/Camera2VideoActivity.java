@@ -29,6 +29,7 @@ import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.graphics.Color;
 import android.graphics.Matrix;
+import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
@@ -40,6 +41,9 @@ import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.CameraMetadata;
 import android.hardware.camera2.CaptureRequest;
+import android.hardware.camera2.CaptureResult;
+import android.hardware.camera2.TotalCaptureResult;
+import android.hardware.camera2.params.MeteringRectangle;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.CamcorderProfile;
 import android.media.MediaRecorder;
@@ -58,15 +62,21 @@ import android.util.Range;
 import android.util.Size;
 import android.util.SparseIntArray;
 import android.view.KeyEvent;
+import android.view.MotionEvent;
 import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
+import android.view.ViewGroup;
+import android.widget.ImageView;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.timer.com.util.DateUtil;
 import com.timer.com.util.Gutil;
 import com.timer.com.util.StorageCustomerInfoUtil;
 
+import java.io.File;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -78,6 +88,8 @@ import java.util.concurrent.TimeUnit;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
+
+import static android.support.v4.math.MathUtils.clamp;
 
 public class Camera2VideoActivity extends BaseActivity
         implements View.OnClickListener, ActivityCompat.OnRequestPermissionsResultCallback {
@@ -118,6 +130,14 @@ public class Camera2VideoActivity extends BaseActivity
     TextView recordController;
     @BindView(R.id.tv_video_time)
     TextView tvVideoTime;
+    @BindView(R.id.tv_left)
+    TextView tvLeft;
+    @BindView(R.id.tv_title)
+    TextView tvTitle;
+    @BindView(R.id.tv_right)
+    TextView tvRight;
+    @BindView(R.id.tv_right2)
+    TextView tvRight2;
 
     /**
      * Button to record video
@@ -214,6 +234,79 @@ public class Camera2VideoActivity extends BaseActivity
             mCameraOpenCloseLock.release();
             if (null != mTextureView) {
                 configureTransform(mTextureView.getWidth(), mTextureView.getHeight());
+                mTextureView.setKeepScreenOn(true);
+                mTextureView.setOnTouchListener(new View.OnTouchListener() {
+                    @Override
+                    public boolean onTouch(View v, MotionEvent event) {
+                        // 先取相对于view上面的坐标
+                        double x = event.getX(), y = event.getY(), tmp;
+                        // 取出来的图像如果有旋转角度的话,则需要将宽高交换下
+                        int realPreviewWidth = mPreviewSize.getWidth(), realPreviewHeight = mPreviewSize.getHeight();
+                        if (SENSOR_ORIENTATION_DEFAULT_DEGREES== mSensorOrientation || SENSOR_ORIENTATION_INVERSE_DEGREES== mSensorOrientation) {
+                            realPreviewWidth = mPreviewSize.getHeight();
+                            realPreviewHeight = mPreviewSize.getWidth();
+                        }
+                        // 计算摄像头取出的图像相对于view放大了多少,以及有多少偏移
+                        double imgScale = 1.0, verticalOffset = 0, horizontalOffset = 0;
+                        if (realPreviewHeight * mTextureView.getWidth() > realPreviewWidth * mTextureView.getHeight()) {
+                            imgScale = mTextureView.getWidth() * 1.0 / realPreviewWidth;
+                            verticalOffset = (realPreviewHeight - mTextureView.getWidth() / imgScale) / 2;
+                        } else {
+                            imgScale = mTextureView.getHeight() * 1.0 / realPreviewHeight;
+                            horizontalOffset = (realPreviewWidth - mTextureView.getWidth() / imgScale) / 2;
+                        }
+// 将点击的坐标转换为图像上的坐标
+                        x = x / imgScale + horizontalOffset;
+                        y = y / imgScale + verticalOffset;
+                        if (SENSOR_ORIENTATION_DEFAULT_DEGREES== mSensorOrientation) {
+                            tmp = x;
+                            x = y;
+                            y = mPreviewSize.getHeight() - tmp;
+                        } else if (SENSOR_ORIENTATION_INVERSE_DEGREES== mSensorOrientation) {
+                            tmp = x;
+                            x = mPreviewSize.getWidth() - y;
+                            y = tmp;
+                        }
+                        //app取到的图像是按照裁剪区域(crop region)按照预览尺寸的比例进行居中裁剪的,所以需要计算app取到的图像相对于裁剪区域进行了多少缩放,以及有多少位移:
+                        // 计算取到的图像相对于裁剪区域的缩放系数,以及位移
+                        Rect cropRegion = mPreviewBuilder.get(CaptureRequest.SCALER_CROP_REGION);
+                        if (null == cropRegion) {
+                            Log.e(TAG, "can't get crop region");
+                            return false;
+                        }
+                        int cropWidth = cropRegion.width(), cropHeight = cropRegion.height();
+                        if (mPreviewSize.getHeight() * cropWidth > mPreviewSize.getWidth() * cropHeight) {
+                            imgScale = cropHeight * 1.0 / mPreviewSize.getHeight();
+                            verticalOffset = 0;
+                            horizontalOffset = (cropWidth - imgScale * mPreviewSize.getWidth()) / 2;
+                        } else {
+                            imgScale = cropWidth * 1.0 / mPreviewSize.getWidth();
+                            horizontalOffset = 0;
+                            verticalOffset = (cropHeight - imgScale * mPreviewSize.getHeight()) / 2;
+                        }
+                        //将点击区域相对于app取到的图像坐标,转化为相对于成像区域的坐标:
+                        // 将点击区域相对于图像的坐标,转化为相对于成像区域的坐标
+                        x = x * imgScale + horizontalOffset + cropRegion.left;
+                        y = y * imgScale + verticalOffset + cropRegion.top;
+                        //按照对焦区域为成像区域的0.1倍计算对焦的矩形:
+                        double tapAreaRatio = 0.1;
+                        Rect rect = new Rect();
+                        rect.left = clamp((int) (x - tapAreaRatio / 2 * cropRegion.width()), 0, cropRegion.width());
+                        rect.right = clamp((int) (x + tapAreaRatio / 2 * cropRegion.width()), 0, cropRegion.width());
+                        rect.top = clamp((int) (y - tapAreaRatio / 2 * cropRegion.height()), 0, cropRegion.height());
+                        rect.bottom = clamp((int) (y + tapAreaRatio / 2 * cropRegion.height()), 0, cropRegion.height());
+
+                        mPreviewBuilder.set(CaptureRequest.CONTROL_AF_REGIONS, new MeteringRectangle[]{new MeteringRectangle(rect, 1000)});
+                        mPreviewBuilder.set(CaptureRequest.CONTROL_AE_REGIONS, new MeteringRectangle[]{new MeteringRectangle(rect, 1000)});
+                        mPreviewBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_AUTO);
+                        mPreviewBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER, CameraMetadata.CONTROL_AF_TRIGGER_START);
+                        mPreviewBuilder.set(CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER, CameraMetadata.CONTROL_AE_PRECAPTURE_TRIGGER_START);
+                        state = true;
+
+                        updatePreview();
+                        return false;
+                    }
+                });
             }
         }
 
@@ -238,6 +331,8 @@ public class Camera2VideoActivity extends BaseActivity
     private int videoTime;
     private Range<Integer> fps;
     private long time;
+    private boolean state = true;
+    private int rotation;
     private String mNextVideoAbsolutePath;
     private CaptureRequest.Builder mPreviewBuilder;
 
@@ -250,7 +345,7 @@ public class Camera2VideoActivity extends BaseActivity
      */
     private Size chooseVideoSize(Size[] choices) {
         int deviceWidth, deviceHeigh;
-        if (this.getWindowManager().getDefaultDisplay().getRotation() == Surface.ROTATION_0 || this.getWindowManager().getDefaultDisplay().getRotation() == Surface.ROTATION_180) {
+        if (rotation == Surface.ROTATION_0 || rotation== Surface.ROTATION_180) {
             DisplayMetrics displayMetrics = getResources().getDisplayMetrics(); //因为我这里是将预览铺满屏幕,所以直接获取屏幕分辨率
             deviceWidth = displayMetrics.heightPixels; //屏幕分辨率宽
             deviceHeigh = displayMetrics.widthPixels; //屏幕分辨率高
@@ -313,29 +408,46 @@ public class Camera2VideoActivity extends BaseActivity
         if (!StorageCustomerInfoUtil.getBooleanInfo("daley", context, true)) {
             shootingDelay = 0;
         }
-        recordController.setOnClickListener(this);
+        recordController.setOnClickListener(this::onClick);
+        tvLeft.setOnClickListener(this::onClick);
         mCamcorderProfile = CamcorderProfile.get(Camera.CameraInfo.CAMERA_FACING_BACK, CamcorderProfile.QUALITY_HIGH);
-        if (CamcorderProfile.hasProfile(CamcorderProfile.QUALITY_HIGH_SPEED_2160P)) {
-            Log.i(TAG, "setUpMediaRecorder: support QUALITY_HIGH_SPEED_2160P");
-            mCamcorderProfile = CamcorderProfile.get(CamcorderProfile.QUALITY_HIGH_SPEED_2160P);
-        } else if (CamcorderProfile.hasProfile(CamcorderProfile.QUALITY_HIGH_SPEED_1080P)) {
-            Log.i(TAG, "setUpMediaRecorder: support QUALITY_HIGH_SPEED_1080P");
-            mCamcorderProfile = CamcorderProfile.get(CamcorderProfile.QUALITY_HIGH_SPEED_1080P);
-        } else if (CamcorderProfile.hasProfile(CamcorderProfile.QUALITY_HIGH_SPEED_HIGH)) {
-            mCamcorderProfile = CamcorderProfile.get(CamcorderProfile.QUALITY_HIGH_SPEED_HIGH);
-            Log.i(TAG, "setUpMediaRecorder: support QUALITY_HIGH_SPEED_HIGH ");
-        } else if (CamcorderProfile.hasProfile(CamcorderProfile.QUALITY_HIGH_SPEED_720P)) {
-            mCamcorderProfile = CamcorderProfile.get(CamcorderProfile.QUALITY_HIGH_SPEED_720P);
-            Log.i(TAG, "setUpMediaRecorder: support QUALITY_HIGH_SPEED_720P");
-        } else if (CamcorderProfile.hasProfile(CamcorderProfile.QUALITY_HIGH_SPEED_LOW)) {
-            mCamcorderProfile = CamcorderProfile.get(CamcorderProfile.QUALITY_HIGH_SPEED_LOW);
-            Log.i(TAG, "setUpMediaRecorder: support QUALITY_HIGH_SPEED_LOW");
-        } else if (CamcorderProfile.hasProfile(CamcorderProfile.QUALITY_HIGH_SPEED_480P)) {
-            mCamcorderProfile = CamcorderProfile.get(CamcorderProfile.QUALITY_HIGH_SPEED_480P);
-            Log.i(TAG, "setUpMediaRecorder: support QUALITY_HIGH_SPEED_480P ");
-        } else if (CamcorderProfile.hasProfile(CamcorderProfile.QUALITY_1080P)) {
-            mCamcorderProfile = CamcorderProfile.get(CamcorderProfile.QUALITY_1080P);
-            Log.i(TAG, "setUpMediaRecorder: support 1080 ");
+        if ( StorageCustomerInfoUtil.getIntInfo(context, "fps", 30)>30) {
+            if (CamcorderProfile.hasProfile(CamcorderProfile.QUALITY_HIGH_SPEED_1080P)) {
+                Log.i(TAG, "setUpMediaRecorder: support QUALITY_HIGH_SPEED_1080P");
+                mCamcorderProfile = CamcorderProfile.get(CamcorderProfile.QUALITY_HIGH_SPEED_1080P);
+            } else if (CamcorderProfile.hasProfile(CamcorderProfile.QUALITY_HIGH_SPEED_HIGH)) {
+                mCamcorderProfile = CamcorderProfile.get(CamcorderProfile.QUALITY_HIGH_SPEED_HIGH);
+                Log.i(TAG, "setUpMediaRecorder: support QUALITY_HIGH_SPEED_HIGH ");
+            } else if (CamcorderProfile.hasProfile(CamcorderProfile.QUALITY_HIGH_SPEED_720P)) {
+                mCamcorderProfile = CamcorderProfile.get(CamcorderProfile.QUALITY_HIGH_SPEED_720P);
+                Log.i(TAG, "setUpMediaRecorder: support QUALITY_HIGH_SPEED_720P");
+            } else if (CamcorderProfile.hasProfile(CamcorderProfile.QUALITY_HIGH_SPEED_LOW)) {
+                mCamcorderProfile = CamcorderProfile.get(CamcorderProfile.QUALITY_HIGH_SPEED_LOW);
+                Log.i(TAG, "setUpMediaRecorder: support QUALITY_HIGH_SPEED_LOW");
+            } else if (CamcorderProfile.hasProfile(CamcorderProfile.QUALITY_HIGH_SPEED_480P)) {
+                mCamcorderProfile = CamcorderProfile.get(CamcorderProfile.QUALITY_HIGH_SPEED_480P);
+                Log.i(TAG, "setUpMediaRecorder: support QUALITY_HIGH_SPEED_480P ");
+            } else if (CamcorderProfile.hasProfile(CamcorderProfile.QUALITY_1080P)) {
+                mCamcorderProfile = CamcorderProfile.get(CamcorderProfile.QUALITY_1080P);
+                Log.i(TAG, "setUpMediaRecorder: support 1080 ");
+            }
+        }else {
+            if (CamcorderProfile.hasProfile(CamcorderProfile.QUALITY_1080P)) {
+                Log.i(TAG, "setUpMediaRecorder: support QUALITY_1080P");
+                mCamcorderProfile = CamcorderProfile.get(CamcorderProfile.QUALITY_1080P);
+            } else if (CamcorderProfile.hasProfile(CamcorderProfile.QUALITY_HIGH)) {
+                mCamcorderProfile = CamcorderProfile.get(CamcorderProfile.QUALITY_HIGH);
+                Log.i(TAG, "setUpMediaRecorder: support QUALITY_HIGH ");
+            } else if (CamcorderProfile.hasProfile(CamcorderProfile.QUALITY_720P)) {
+                mCamcorderProfile = CamcorderProfile.get(CamcorderProfile.QUALITY_720P);
+                Log.i(TAG, "setUpMediaRecorder: support QUALITY_720P");
+            } else if (CamcorderProfile.hasProfile(CamcorderProfile.QUALITY_LOW)) {
+                mCamcorderProfile = CamcorderProfile.get(CamcorderProfile.QUALITY_LOW);
+                Log.i(TAG, "setUpMediaRecorder: support QUALITY_LOW");
+            } else if (CamcorderProfile.hasProfile(CamcorderProfile.QUALITY_480P)) {
+                mCamcorderProfile = CamcorderProfile.get(CamcorderProfile.QUALITY_480P);
+                Log.i(TAG, "setUpMediaRecorder: support QUALITY_480P ");
+            }
         }
     }
 
@@ -350,18 +462,22 @@ public class Camera2VideoActivity extends BaseActivity
     @Override
     public void onClick(View view) {
         switch (view.getId()) {
-            case R.id.record_controller: {
+            case R.id.record_controller:
+                Log.i(TAG, "onClick:点击按钮时间 "+ DateUtil.formatDateToHMS2(System.currentTimeMillis()) );
                 if (mIsRecordingVideo) {
                     stopRecordingVideo();
                 } else {
                     mHandlers.sendEmptyMessage(1);
                 }
                 break;
-            }
+            case R.id.tv_left:
+                finish();
+                break;
         }
     }
 
     private Handler mHandlers = new Handler() {
+        @RequiresApi(api = Build.VERSION_CODES.M)
         @Override
         public void handleMessage(Message msg) {
             switch (msg.what) {
@@ -369,18 +485,20 @@ public class Camera2VideoActivity extends BaseActivity
                     if (shootingDelay <= 0) {
                         tvDelayTime.setVisibility(View.GONE);
                         Camera2VideoActivity.this.runOnUiThread(new Runnable() {
+                            @RequiresApi(api = Build.VERSION_CODES.M)
                             @Override
                             public void run() {
                                 // UI
-                                recordController.animate().scaleX(0.8f).scaleY(0.8f).setDuration(500).start();
+                                mMediaRecorder.start();
+                                Log.i(TAG, "onClick:录制时间 "+ DateUtil.formatDateToHMS2(System.currentTimeMillis()) );
+                                time = System.currentTimeMillis();
+                                mHandlers.sendEmptyMessage(2);
+                                mIsRecordingVideo = true;
+//                recordController.animate().scaleX(0.8f).scaleY(0.8f).setDuration(500).start();
                                 recordController.setTextColor(Color.RED);
                                 recordController.setBackgroundResource(R.drawable.small_video_shoot_stop);
                                 recordController.setText("停止");
-                                mIsRecordingVideo = true;
                                 // Start recording
-                                mMediaRecorder.start();
-                                time = System.currentTimeMillis();
-                                mHandlers.sendEmptyMessage(2);
                             }
                         });
                     } else {
@@ -503,6 +621,15 @@ public class Camera2VideoActivity extends BaseActivity
     protected void onResume() {
         super.onResume();
         startBackgroundThread();
+        mPreviewSize = mVideoSize = new Size(mCamcorderProfile.videoFrameWidth, mCamcorderProfile.videoFrameHeight);
+        rotation =this.getWindowManager().getDefaultDisplay().getRotation();
+        if (Surface.ROTATION_90 == rotation || Surface.ROTATION_270 == rotation) {
+            mTextureView.setAspectRatio(mPreviewSize.getWidth(), mPreviewSize.getHeight());
+        } else {
+            mTextureView.setAspectRatio(mPreviewSize.getHeight(), mPreviewSize.getWidth());
+        }
+        configureTransform(mTextureView.getWidth(), mTextureView.getHeight());
+        mMediaRecorder = new MediaRecorder();
         if (mTextureView.isAvailable()) {
             openCamera(mTextureView.getWidth(), mTextureView.getHeight());
         } else {
@@ -548,15 +675,6 @@ public class Camera2VideoActivity extends BaseActivity
 //            mVideoSize = chooseVideoSize(map.getOutputSizes(MediaRecorder.class));
 //            mPreviewSize = chooseOptimalSize(map.getOutputSizes(SurfaceTexture.class),
 //                    width, height, mVideoSize);
-            mPreviewSize = mVideoSize = new Size(mCamcorderProfile.videoFrameWidth, mCamcorderProfile.videoFrameHeight);
-            int orientation = getResources().getConfiguration().orientation;
-            if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
-                mTextureView.setAspectRatio(mPreviewSize.getWidth(), mPreviewSize.getHeight());
-            } else {
-                mTextureView.setAspectRatio(mPreviewSize.getHeight(), mPreviewSize.getWidth());
-            }
-            configureTransform(width, height);
-            mMediaRecorder = new MediaRecorder();
             manager.openCamera(cameraId, mStateCallback, null);
         } catch (CameraAccessException e) {
             Toast.makeText(this, "Cannot access the camera.", Toast.LENGTH_SHORT).show();
@@ -604,9 +722,9 @@ public class Camera2VideoActivity extends BaseActivity
             thread.start();
             if (fps.getLower() > 30) {
                 List<CaptureRequest> mPreviewBuilderBurst = mHighSpeedPreviewSession.createHighSpeedRequestList(mPreviewBuilder.build());
-                mHighSpeedPreviewSession.setRepeatingBurst(mPreviewBuilderBurst, null, mBackgroundHandler);
+                mHighSpeedPreviewSession.setRepeatingBurst(mPreviewBuilderBurst, mCaptureCallback, mBackgroundHandler);
             } else {
-                mPreviewSession.setRepeatingRequest(mPreviewBuilder.build(), null, mBackgroundHandler);
+                mPreviewSession.setRepeatingRequest(mPreviewBuilder.build(), mCaptureCallback, mBackgroundHandler);
             }
         } catch (CameraAccessException e) {
             e.printStackTrace();
@@ -629,7 +747,6 @@ public class Camera2VideoActivity extends BaseActivity
         if (null == mTextureView || null == mPreviewSize) {
             return;
         }
-        int rotation = this.getWindowManager().getDefaultDisplay().getRotation();
         Matrix matrix = new Matrix();
         RectF viewRect = new RectF(0, 0, viewWidth, viewHeight);
         RectF bufferRect = new RectF(0, 0, mPreviewSize.getHeight(), mPreviewSize.getWidth());
@@ -648,14 +765,15 @@ public class Camera2VideoActivity extends BaseActivity
     }
 
     private void setUpMediaRecorder() throws IOException {
+        if (mNextVideoAbsolutePath != null) {
+            return;
+        }
         mMediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
         mMediaRecorder.setVideoSource(MediaRecorder.VideoSource.SURFACE);
         mMediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
-        if (mNextVideoAbsolutePath == null || mNextVideoAbsolutePath.isEmpty()) {
-            mNextVideoAbsolutePath = getVideoFilePath();
-        }
+        mNextVideoAbsolutePath = getVideoFilePath();
         mMediaRecorder.setOutputFile(mNextVideoAbsolutePath);
-        if (fps.getLower() > 30) {
+//        if (fps.getLower() > 30) {
             mMediaRecorder.setAudioEncoder(mCamcorderProfile.audioCodec);
             mMediaRecorder.setVideoEncoder(mCamcorderProfile.videoCodec);
             mMediaRecorder.setVideoSize(mCamcorderProfile.videoFrameWidth, mCamcorderProfile.videoFrameHeight);
@@ -664,16 +782,20 @@ public class Camera2VideoActivity extends BaseActivity
             mMediaRecorder.setAudioEncodingBitRate(mCamcorderProfile.audioBitRate);
             mMediaRecorder.setAudioChannels(mCamcorderProfile.audioChannels);
             mMediaRecorder.setAudioSamplingRate(mCamcorderProfile.audioSampleRate);
-        } else {
-            mMediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.DEFAULT);//设置音频编码格式，请注意这里使用默认，实际app项目需要考虑兼容问题，应该选择AAC
-            mMediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);//设置视频编码格式，请注意这里使用默认，实际app项目需要考虑兼容问题，应该选择H264
-            mMediaRecorder.setVideoEncodingBitRate(16 * 24 * mVideoSize.getWidth() * mVideoSize.getHeight());//设置比特率 一般是 1*分辨率 到 10*分辨率 之间波动。比特率越大视频越清晰但是视频文件也越大。
-            mMediaRecorder.setVideoFrameRate(30);//设置帧数 选择 30即可， 过大帧数也会让视频文件更大当然也会更流畅，但是没有多少实际提升。人眼极限也就30帧了。
-            mMediaRecorder.setAudioSamplingRate(44100);
-            mMediaRecorder.setVideoSize(mVideoSize.getWidth(), mVideoSize.getHeight());
-        }
-
-        int rotation = this.getWindowManager().getDefaultDisplay().getRotation();
+//            mMediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.DEFAULT);//设置音频编码格式，请注意这里使用默认，实际app项目需要考虑兼容问题，应该选择AAC
+//            mMediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);//设置视频编码格式，请注意这里使用默认，实际app项目需要考虑兼容问题，应该选择H264
+//            mMediaRecorder.setVideoEncodingBitRate(16 * 24 * mVideoSize.getWidth() * mVideoSize.getHeight());//设置比特率 一般是 1*分辨率 到 10*分辨率 之间波动。比特率越大视频越清晰但是视频文件也越大。
+//            mMediaRecorder.setVideoFrameRate(mCamcorderProfile.videoFrameRate);//设置帧数 选择 30即可， 过大帧数也会让视频文件更大当然也会更流畅，但是没有多少实际提升。人眼极限也就30帧了。
+//            mMediaRecorder.setAudioSamplingRate(44100);
+//            mMediaRecorder.setVideoSize(mVideoSize.getWidth(), mVideoSize.getHeight());
+//        } else {
+//            mMediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.DEFAULT);//设置音频编码格式，请注意这里使用默认，实际app项目需要考虑兼容问题，应该选择AAC
+//            mMediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);//设置视频编码格式，请注意这里使用默认，实际app项目需要考虑兼容问题，应该选择H264
+//            mMediaRecorder.setVideoEncodingBitRate(16 * 24 * mVideoSize.getWidth() * mVideoSize.getHeight());//设置比特率 一般是 1*分辨率 到 10*分辨率 之间波动。比特率越大视频越清晰但是视频文件也越大。
+//            mMediaRecorder.setVideoFrameRate(30);//设置帧数 选择 30即可， 过大帧数也会让视频文件更大当然也会更流畅，但是没有多少实际提升。人眼极限也就30帧了。
+//            mMediaRecorder.setAudioSamplingRate(44100);
+//            mMediaRecorder.setVideoSize(mVideoSize.getWidth(), mVideoSize.getHeight());
+//        }
         switch (mSensorOrientation) {
             case SENSOR_ORIENTATION_DEFAULT_DEGREES:
                 mMediaRecorder.setOrientationHint(DEFAULT_ORIENTATIONS.get(rotation));
@@ -683,10 +805,11 @@ public class Camera2VideoActivity extends BaseActivity
                 break;
         }
         mMediaRecorder.prepare();
+
     }
 
     private String getVideoFilePath() {
-        return Environment.getExternalStorageDirectory().getPath() + "/ffmpeg/video/" + System.currentTimeMillis() + ".mp4";
+        return context.getExternalFilesDir(Environment.DIRECTORY_DCIM) + "/" + DateUtil.formatDateToHMS2(System.currentTimeMillis()) + ".mp4";
     }
 
     @RequiresApi(api = Build.VERSION_CODES.M)
@@ -696,26 +819,12 @@ public class Camera2VideoActivity extends BaseActivity
         }
         try {
             closePreviewSession();
-            setUpMediaRecorder();
             SurfaceTexture texture = mTextureView.getSurfaceTexture();
             assert texture != null;
             texture.setDefaultBufferSize(mPreviewSize.getWidth(), mPreviewSize.getHeight());
-            Long km = StorageCustomerInfoUtil.getLongInfo(this, "km", (long) 0);
-            if (km < StorageCustomerInfoUtil.getLongInfo(context, "KMmin", (long) 0)) {
-                km = StorageCustomerInfoUtil.getLongInfo(context, "KMmin", (long) 0);
-            }
-            if (km > StorageCustomerInfoUtil.getLongInfo(context, "KMmax", (long) 0)) {
-                km = StorageCustomerInfoUtil.getLongInfo(context, "KMmax", (long) 0);
-            }
             mPreviewBuilder = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_RECORD);
             mPreviewBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO);
-            if (km == 0) {
-                mPreviewBuilder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
-            } else {
-                mPreviewBuilder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_OFF);
-                mPreviewBuilder.set(CaptureRequest.SENSOR_SENSITIVITY, StorageCustomerInfoUtil.getIntInfo(this, "iso", 1000));
-                mPreviewBuilder.set(CaptureRequest.SENSOR_EXPOSURE_TIME, km);
-            }
+            mPreviewBuilder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
             mPreviewBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, fps);
             List<Surface> surfaces = new ArrayList<>();
 
@@ -724,17 +833,11 @@ public class Camera2VideoActivity extends BaseActivity
             surfaces.add(previewSurface);
             mPreviewBuilder.addTarget(previewSurface);
 
-            // Set up Surface for the MediaRecorder
-            Surface recorderSurface = mMediaRecorder.getSurface();
-            surfaces.add(recorderSurface);
-            mPreviewBuilder.addTarget(recorderSurface);
-
             // Start a capture session
             // Once the session starts, we can update the UI and start recording
             if (fps.getLower() > 30) {
                 mCameraDevice.createConstrainedHighSpeedCaptureSession(surfaces,
                         new CameraCaptureSession.StateCallback() {
-
                             @Override
                             public void onConfigured(@NonNull CameraCaptureSession session) {
                                 mHighSpeedPreviewSession = (CameraConstrainedHighSpeedCaptureSession) session;
@@ -760,10 +863,9 @@ public class Camera2VideoActivity extends BaseActivity
                     }
                 }, mBackgroundHandler);
             }
-        } catch (CameraAccessException | IOException e) {
+        } catch (CameraAccessException e) {
             e.printStackTrace();
         }
-
     }
 
     private void closePreviewSession() {
@@ -777,6 +879,93 @@ public class Camera2VideoActivity extends BaseActivity
         }
     }
 
+    private CameraCaptureSession.CaptureCallback mCaptureCallback
+            = new CameraCaptureSession.CaptureCallback() {
+
+        @RequiresApi(api = Build.VERSION_CODES.M)
+        @Override
+        public void onCaptureCompleted(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, @NonNull TotalCaptureResult result) {
+            super.onCaptureCompleted(session, request, result);
+            if (state) {
+                if (null == mCameraDevice || !mTextureView.isAvailable() || null == mPreviewSize) {
+                    return;
+                }
+                try {
+                    closePreviewSession();
+                    setUpMediaRecorder();
+                    SurfaceTexture texture = mTextureView.getSurfaceTexture();
+                    assert texture != null;
+                    texture.setDefaultBufferSize(mPreviewSize.getWidth(), mPreviewSize.getHeight());
+                    Long km = StorageCustomerInfoUtil.getLongInfo(context, "km", (long) 0);
+                    long min = StorageCustomerInfoUtil.getLongInfo(context, "KMmin", (long) 1000 * 1000);
+                    long max = StorageCustomerInfoUtil.getLongInfo(context, "KMmax", (long) 10 * 1000 * 1000);
+                    if (km > 0) {
+                        km = Math.max(Math.min(max, km), min);
+                    }
+                    mPreviewBuilder = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_RECORD);
+//                    mPreviewBuilder.set(CaptureRequest.CONTROL_AF_MODE, result.get(CaptureResult.CONTROL_AF_MODE));
+                    mPreviewBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER, CameraMetadata.CONTROL_AF_TRIGGER_IDLE);
+                    mPreviewBuilder.set(CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER, CameraMetadata.CONTROL_AE_PRECAPTURE_TRIGGER_IDLE);
+                    if (km == 0) {
+                        mPreviewBuilder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
+                    } else {
+                        mPreviewBuilder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_OFF);
+                        mPreviewBuilder.set(CaptureRequest.LENS_FOCUS_DISTANCE, result.get(CaptureResult.LENS_FOCUS_DISTANCE));
+                        mPreviewBuilder.set(CaptureRequest.CONTROL_AE_EXPOSURE_COMPENSATION, result.get(CaptureResult.CONTROL_AE_EXPOSURE_COMPENSATION));
+                        mPreviewBuilder.set(CaptureRequest.SENSOR_SENSITIVITY, result.get(CaptureResult.SENSOR_SENSITIVITY));
+                        mPreviewBuilder.set(CaptureRequest.SENSOR_EXPOSURE_TIME, km);
+                        mPreviewBuilder.set(CaptureRequest.SENSOR_FRAME_DURATION, result.get(CaptureResult.SENSOR_FRAME_DURATION));
+                    }
+                    mPreviewBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, fps);
+                    List<Surface> surfaces = new ArrayList<>();
+
+                    // Set up Surface for the camera preview
+                    Surface previewSurface = new Surface(texture);
+                    surfaces.add(previewSurface);
+                    mPreviewBuilder.addTarget(previewSurface);
+
+                    Surface recorderSurface = mMediaRecorder.getSurface();
+                    surfaces.add(recorderSurface);
+                    mPreviewBuilder.addTarget(recorderSurface);
+                    // Start a capture session
+                    // Once the session starts, we can update the UI and start recording
+                    if (fps.getLower() > 30) {
+                        mCameraDevice.createConstrainedHighSpeedCaptureSession(surfaces,
+                                new CameraCaptureSession.StateCallback() {
+
+                                    @Override
+                                    public void onConfigured(@NonNull CameraCaptureSession session) {
+                                        mHighSpeedPreviewSession = (CameraConstrainedHighSpeedCaptureSession) session;
+                                        updatePreview();
+                                    }
+
+                                    @Override
+                                    public void onConfigureFailed(@NonNull CameraCaptureSession session) {
+                                        Toast.makeText(Camera2VideoActivity.this, "Failed", Toast.LENGTH_SHORT).show();
+                                    }
+                                }, mBackgroundHandler);
+                    } else {
+                        mCameraDevice.createCaptureSession(surfaces, new CameraCaptureSession.StateCallback() {
+                            @Override
+                            public void onConfigured(@NonNull CameraCaptureSession cameraCaptureSession) {
+                                mPreviewSession = cameraCaptureSession;
+                                updatePreview();
+                            }
+
+                            @Override
+                            public void onConfigureFailed(@NonNull CameraCaptureSession cameraCaptureSession) {
+                                Toast.makeText(Camera2VideoActivity.this, "Failed", Toast.LENGTH_SHORT).show();
+                            }
+                        }, mBackgroundHandler);
+                    }
+                } catch (CameraAccessException | IOException e) {
+                    e.printStackTrace();
+                }
+                state = false;
+            }
+        }
+    };
+
     private void stopRecordingVideo() {
         // UI
         mIsRecordingVideo = false;
@@ -784,9 +973,31 @@ public class Camera2VideoActivity extends BaseActivity
         mMediaRecorder.stop();
         mMediaRecorder.release();
         mHandlers.removeMessages(2);
-        setResult(RESULT_OK, new Intent().putExtra("path", mNextVideoAbsolutePath).putExtra("time", time));
+        File file = new File(mNextVideoAbsolutePath);
+        String newFile = context.getExternalFilesDir(Environment.DIRECTORY_DCIM) + "/" + DateUtil.formatDateToHMS2(time) + ".mp4";
+        if (file != null) {
+            file.renameTo(new File(newFile));
+        }
+        setResult(RESULT_OK, new Intent().putExtra("path", newFile).putExtra("time", time));
         finish();
 //        startPreview();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+
+        if (mMediaRecorder!=null) {
+            mMediaRecorder.stop();
+            mMediaRecorder.release();
+            mHandlers.removeMessages(2);
+            if (mIsRecordingVideo) {
+                File file = new File(mNextVideoAbsolutePath);
+                if (file != null) {
+                    file.delete();
+                }
+            }
+        }
     }
 
     @Override

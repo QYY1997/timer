@@ -13,7 +13,7 @@ public class DateUtil {
     private static SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
     private static SimpleDateFormat sdf1 = new SimpleDateFormat("yyyy-MM-dd HH:mm");
     private static SimpleDateFormat sdf3 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-    private static SimpleDateFormat sdf4= new SimpleDateFormat("yyyy年MM月dd日HH时mm分ss秒");
+    private static SimpleDateFormat sdf4= new SimpleDateFormat("yyyy-MM-dd-HH:mm:ss.SSS");
     private static SimpleDateFormat sdfYM = new SimpleDateFormat("yyyy年MM月");
     private static SimpleDateFormat sdfYMD = new SimpleDateFormat("yyyy年MM月dd号");
     public static String formatHM(String date) {

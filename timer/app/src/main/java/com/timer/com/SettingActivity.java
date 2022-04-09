@@ -222,10 +222,10 @@ public class SettingActivity extends BaseActivity {
                         long values = Math.max(Math.min(min, value.longValue()), max);
                         if (values == 0||value.intValue()==0) {
                             tvShutter.setText("自动");
-                            StorageCustomerInfoUtil.putInfo(context, "km", 0);
+                            StorageCustomerInfoUtil.putInfo(context, "km", (long)0);
                         } else {
                             tvShutter.setText(values + "");
-                            StorageCustomerInfoUtil.putInfo(context, "km", 1000000000/values);
+                            StorageCustomerInfoUtil.putInfo(context, "km", (long)1000000000/values);
                         }
                     }
                 });

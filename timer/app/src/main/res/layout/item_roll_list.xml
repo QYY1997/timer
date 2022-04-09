@@ -14,13 +14,13 @@
 
         <TextView
             android:id="@+id/tv_num"
-            android:layout_width="@dimen/dp_30"
+            android:layout_width="@dimen/dp_35"
             android:layout_height="wrap_content"
             android:textSize="@dimen/sp_14"
             android:layout_gravity="center_vertical"
             android:gravity="center"
             android:text=""
-            android:textColor="@color/white"/>
+            android:textColor="@color/light_yellow"/>
 
         <TextView
             android:id="@+id/tv_name"

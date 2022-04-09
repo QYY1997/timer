@@ -36,6 +36,7 @@ import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
@@ -48,6 +49,7 @@ import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.animation.GlideAnimation;
 import com.bumptech.glide.request.target.SimpleTarget;
 import com.chad.library.adapter.base.BaseQuickAdapter;
+import com.lzy.okgo.callback.StringCallback;
 import com.lzy.okgo.model.HttpParams;
 import com.lzy.okgo.model.Response;
 import com.timer.com.bean.EnRollModel;
@@ -71,7 +73,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Random;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -93,8 +99,8 @@ public class TranscodeActivity extends BaseActivity {
     TextView tvRight2;
     @BindView(R.id.tv_right)
     TextView tvRight;
-    @BindView(R.id.iv_cover)
-    ImageView ivCover;
+//    @BindView(R.id.iv_cover)
+//    ImageView ivCover;
     @BindView(R.id.tv_last_page)
     TextView tvLastPage;
     @BindView(R.id.tv_next_page)
@@ -139,8 +145,6 @@ public class TranscodeActivity extends BaseActivity {
     TextView tvRecording;
     @BindView(R.id.iv_start_flag)
     ImageView ivStartFlag;
-    @BindView(R.id.iv_end_flag)
-    ImageView ivEndFlag;
     @BindView(R.id.surfaceview)
     SurfaceView surfaceview;
     @BindView(R.id.tv_now_paragraph)
@@ -155,13 +159,13 @@ public class TranscodeActivity extends BaseActivity {
     private List<EnRollModel> enRollModelList1 = new ArrayList<>();
     private List<EnRollModel> enRollModelList2 = new ArrayList<>();
     private VideoInfo mInfo;
-    private String basePathPic;
-    private String basePathVideo;
+//    private String basePathPic;
+//    private String basePathVideo;
     private int frameRate;
     private long lastClickTime;
     private Thread payThread;
     private int delayTime;
-    private int start, end, startPage, endPage;
+    private int start, startPage;
     private boolean autoStart;
     private boolean yun;
     private int addTime = 0;
@@ -176,6 +180,7 @@ public class TranscodeActivity extends BaseActivity {
     private boolean last, first;
     private long videoTime;
     private long startTime;
+    private int group,road;
     private Integer deviceLevel;
 
     Comparator<EnRollModel> comparator = new Comparator<EnRollModel>() {
@@ -270,11 +275,11 @@ public class TranscodeActivity extends BaseActivity {
                         mHandlers.removeMessages(2);
                     }
                     break;
-                case 3:
-//                    MyTask myTask = new MyTask();
-//                    myTask.execute();
-                    surfaceview.setVisibility(View.VISIBLE);
-                    break;
+//                case 3:
+////                    MyTask myTask = new MyTask();
+////                    myTask.execute();
+//                    surfaceview.setVisibility(View.VISIBLE);
+//                    break;
 //                case 4:
 //                    setVideo(paths.get(0));
 //                    break;
@@ -294,10 +299,10 @@ public class TranscodeActivity extends BaseActivity {
 
     @Override
     public void initData() {
-        basePathPic = "/ffmpeg/pic";
-        basePathVideo = "/ffmpeg/videoCut";
-        deleteDir(basePathPic);
-        deleteDir(basePathVideo);
+//        basePathPic = "/ffmpeg/pic";
+//        basePathVideo = "/ffmpeg/videoCut";
+//        deleteDir(basePathPic);
+//        deleteDir(basePathVideo);
         tvRight.setVisibility(View.VISIBLE);
         tvRight.setText("参数设置");
         tvLeft.setText("组别设置");
@@ -311,13 +316,13 @@ public class TranscodeActivity extends BaseActivity {
         screenWidth = dm.widthPixels;
         llRedLine.setVisibility(StorageCustomerInfoUtil.getBooleanInfo("redLine", context, true) ? View.VISIBLE : View.GONE);
         llRedLine.setOnTouchListener(movingEventListener);
-        try {
-            basePathPic = isExistDir(basePathPic);
-            basePathVideo = isExistDir(basePathVideo);
-            isExistDir("/ffmpeg/video");
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+//        try {
+//            basePathPic = isExistDir(basePathPic);
+//            basePathVideo = isExistDir(basePathVideo);
+//            isExistDir("/ffmpeg/video");
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
         checkPermission();
         try {
             isHardwareSupported();
@@ -326,6 +331,7 @@ public class TranscodeActivity extends BaseActivity {
         }
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
     protected void onResume() {
         super.onResume();
@@ -337,7 +343,30 @@ public class TranscodeActivity extends BaseActivity {
         progressDialog = ProgressDialog.getInstance(videoCount);
         enRollListAdapter1.notifyDataSetChanged();
         enRollListAdapter2.notifyDataSetChanged();
+        if (mPlayer!=null) {
+            mPlayer.reset();
+        }
+//        surfaceview.setVisibility(View.GONE);
+//        surfaceview.setVisibility(View.VISIBLE);
+//        if (mPlayer!=null) {
+//            mPlayer.seekTo(addTime + seekBar.getProgress(), MediaPlayer.SEEK_CLOSEST);
+//            mPlayer.start();
+//            mPlayer.pause();
+//        }
     }
+
+
+//    @RequiresApi(api = Build.VERSION_CODES.O)
+//    @Override
+//    protected void onRestart() {
+//        super.onRestart();
+//        if (mPlayer==null) {
+//            setMediaPlay(new File( StorageCustomerInfoUtil.getInfo("videoPath",context)));
+//        }
+//        mPlayer.seekTo(addTime + seekBar.getProgress(), MediaPlayer.SEEK_CLOSEST);
+//        mPlayer.start();
+//        mPlayer.pause();
+//    }
 
     private void checkPermission() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
@@ -362,11 +391,20 @@ public class TranscodeActivity extends BaseActivity {
         Range<Long> range2 = characteristics.get(CameraCharacteristics.SENSOR_INFO_EXPOSURE_TIME_RANGE);
         StreamConfigurationMap fpsMap = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
         Range<Integer>[] range3 = characteristics.get(CameraCharacteristics.CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES);
+        Range<Integer> range4 = characteristics.get(CameraCharacteristics.CONTROL_AE_COMPENSATION_RANGE);
+
+
+        if (range4!= null) {
+            int minExposure = range4.getLower();
+            int maxExposure = range4.getUpper();
+            Log.i(TAG, "亮度范围：" + minExposure + "-" + maxExposure);
+            StorageCustomerInfoUtil.putInfo(context, "light", maxExposure);
+        }
         if (range1 != null) {
             int max1 = range1.getUpper();//华为P9最大值为3500
             int min1 = range1.getLower();//华为P9最小值为100
             Log.i(TAG, "ISO范围：" + min1 + "-" + max1);
-            StorageCustomerInfoUtil.putInfo(context, "iso", max1 / 2 + min1 / 2);
+            StorageCustomerInfoUtil.putInfo(context, "iso", max1);
         }
         if (range2 != null) {
             Long max2 = range2.getUpper();//华为P9最大值1s
@@ -447,6 +485,9 @@ public class TranscodeActivity extends BaseActivity {
                 }
             } else if (requestCode == CHOOSE) {
                 demandId = data.getStringExtra("id");
+                startTime=data.getLongExtra("startTime",0);
+                group=data.getIntExtra("group",0);
+                road=data.getIntExtra("road",0);
                 if (videoTime!=0&&startTime!=0&&yun){
                     delayTime=(int)(videoTime-startTime);
                 }
@@ -476,9 +517,23 @@ public class TranscodeActivity extends BaseActivity {
                         ScoreListModel scoreListModel = JSONObject.parseObject(resultModel.getData().getData(), ScoreListModel.class);
                         last = scoreListModel.isLast();
                         first = scoreListModel.isFirst();
+                        Map<String, EnRollModel> map1=new HashMap<>();
+                        for (EnRollModel enRollModel:scoreListModel.getContent()){
+                            map1.put(enRollModel.getRoad(),enRollModel);
+                        }
+
                         if (left) {
-                            enRollModelList1 = scoreListModel.getContent();
-                            Collections.sort(enRollModelList1, comparator);
+                            enRollModelList1.clear();
+                            for (int i=0;i<(last?road:10);i++){
+                                String roads=group+"-"+(i+1);
+                                if (map1.containsKey(roads)){
+                                    enRollModelList1.add(map1.get(roads));
+                                }else {
+                                    EnRollModel rollModel = new EnRollModel();
+                                    rollModel.setRoad(group + "-" + (i + 1));
+                                    enRollModelList1.add(rollModel);
+                                }
+                            }
                             enRollListAdapter1.setNewData(enRollModelList1);
                             enRollListAdapter1.setOnItemClickListener(new BaseQuickAdapter.OnItemClickListener() {
                                 @Override
@@ -495,8 +550,17 @@ public class TranscodeActivity extends BaseActivity {
                                 enRollListAdapter2.setNewData(enRollModelList2);
                             }
                         } else {
-                            enRollModelList2 = scoreListModel.getContent();
-                            Collections.sort(enRollModelList2, comparator);
+                            enRollModelList2.clear();
+                            for (int i=enRollModelList1.size();i<(last?road:20);i++){
+                                String roads=group+"-"+(i+1);
+                                if (map1.containsKey(roads)){
+                                    enRollModelList2.add(map1.get(roads));
+                                }else {
+                                    EnRollModel rollModel = new EnRollModel();
+                                    rollModel.setRoad(group + "-" + (i + 1));
+                                    enRollModelList2.add(rollModel);
+                                }
+                            }
                             enRollListAdapter2.setNewData(enRollModelList2);
                             enRollListAdapter2.setOnItemClickListener(new BaseQuickAdapter.OnItemClickListener() {
                                 @Override
@@ -511,6 +575,48 @@ public class TranscodeActivity extends BaseActivity {
         });
     }
 
+    private String getRandomString() {
+        StringBuffer buffer = new StringBuffer(
+                "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ");
+        StringBuffer sb = new StringBuffer();
+        Random r = new Random();
+        int range = buffer.length();
+        for (int i = 0; i < 20; i++) {
+            sb.append(buffer.charAt(r.nextInt(range)));
+        }
+        return sb.toString();
+    }
+
+//    private void createId(int position, boolean left) {
+//        loadingDialog.show();
+//        HttpParams map = new HttpParams();
+//        map.put("demandId", demandId);
+//        map.put("road", left ? enRollModelList1.get(position).getRoad() : enRollModelList2.get(position).getRoad());
+//        map.put("cls", "");
+////        map.put("id", getRandomString());
+//        map.put("studentName", "");
+//        OkClient.getInstance().post("/api/save", map, new OkClient.EntityCallBack<ResultModel>(context, ResultModel.class) {
+//
+//            @Override
+//            public void onError(Response<ResultModel> response) {
+//                super.onError(response);
+//                loadingDialog.dismiss();
+//            }
+//
+//            @Override
+//            public void onSuccess(Response<ResultModel> response) {
+//                super.onSuccess(response);
+//                loadingDialog.dismiss();
+//                if (response.body() != null) {
+//                    ResultModel resultModel = response.body();
+//                    if (resultModel.getData().getRetCode() == 0) {
+//                        Toast.makeText(context, "报名成功", Toast.LENGTH_SHORT).show();
+//                        submit(position,left);
+//                    }
+//                }
+//            }
+//        });
+//    }
     private void submit(int position, boolean left) {
         loadingDialog.show();
         HttpParams map = new HttpParams();
@@ -548,11 +654,9 @@ public class TranscodeActivity extends BaseActivity {
     @RequiresApi(api = Build.VERSION_CODES.O)
     private void setVideo() {
 //        this.path = path;
-        deleteDir(basePathVideo);
+//        deleteDir(basePathVideo);
         start = 0;
-        end = 0;
         startPage = 0;
-        endPage = 0;
         addTime = 0;
         videoPage = 1;
         time = 0;
@@ -567,9 +671,9 @@ public class TranscodeActivity extends BaseActivity {
             setMediaPlay(file);
             tvNowParagraph.setText("当前：" + videoPage + "/" + videoCount);
             tvNowParagraph.setVisibility(View.VISIBLE);
-            ivCover.setVisibility(View.VISIBLE);
-            Bitmap videoFrame = MediaTool.getVideoFrame(mVideoPath, 200000);
-            ivCover.setImageBitmap(videoFrame);
+//            ivCover.setVisibility(View.VISIBLE);
+//            Bitmap videoFrame = MediaTool.getVideoFrame(mVideoPath, 200000);
+//            ivCover.setImageBitmap(videoFrame);
         }
     }
 
@@ -587,6 +691,7 @@ public class TranscodeActivity extends BaseActivity {
                 seekBar.setProgress(0);
             }
         });
+
         mPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
             @RequiresApi(api = Build.VERSION_CODES.O)
             @Override
@@ -602,10 +707,7 @@ public class TranscodeActivity extends BaseActivity {
 
             @Override
             public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-                RelativeLayout.LayoutParams layoutParams = (RelativeLayout.LayoutParams) surfaceview.getLayoutParams();
-                layoutParams.width = mInfo.width;
-                layoutParams.height =mInfo.height;
-                surfaceview.setLayoutParams(layoutParams);
+
             }
 
             @Override
@@ -620,7 +722,6 @@ public class TranscodeActivity extends BaseActivity {
                 tvTitle.setText(Gutil.parseTimeMillis(addTime + progress + delayTime));
 //                    ivCover.setImageBitmap(MediaTool.getVideoFrame(path, progress*1000));
                 if (!mPlayer.isPlaying()){
-                    ivCover.setVisibility(View.GONE);
                     surfaceview.setVisibility(View.VISIBLE);
                     mPlayer.seekTo(addTime + progress,MediaPlayer.SEEK_CLOSEST);
                 }
@@ -636,12 +737,17 @@ public class TranscodeActivity extends BaseActivity {
 //                    getPic();
             }
         });
+        FrameLayout.LayoutParams layoutParams = (FrameLayout.LayoutParams) surfaceview.getLayoutParams();
+        layoutParams.width =(mInfo.rotation==90||mInfo.rotation==270)? mInfo.height:mInfo.width;
+        layoutParams.height =(mInfo.rotation==90||mInfo.rotation==270)?mInfo.width:mInfo.height;
+        surfaceview.setLayoutParams(layoutParams);
         mPlayer.seekTo(addTime,MediaPlayer.SEEK_CLOSEST);
         mPlayer.start();
         mPlayer.pause();
         seekBar.setProgress(0);
         surfaceview.setVisibility(View.GONE);
-        mHandlers.sendEmptyMessageDelayed(3,500);
+        surfaceview.setVisibility(View.VISIBLE);
+//        mHandlers.sendEmptyMessageDelayed(3,500);
 
     }
 
@@ -725,7 +831,7 @@ public class TranscodeActivity extends BaseActivity {
     @RequiresApi(api = Build.VERSION_CODES.O)
     @OnClick({R.id.tv_left, R.id.tv_right, R.id.tv_last_page, R.id.tv_next_page, R.id.tv_last_paragraph,
             R.id.tv_next_paragraph, R.id.tv_choose, R.id.tv_start, R.id.tv_before_n, R.id.tv_before,R.id.tv_sign,
-            R.id.tv_previous, R.id.tv_play, R.id.tv_next, R.id.tv_after, R.id.tv_after_n, R.id.tv_end, R.id.tv_recording})
+            R.id.tv_previous, R.id.tv_play, R.id.tv_next, R.id.tv_after, R.id.tv_after_n, R.id.tv_recording})
     public void onViewClicked(View view) {
         if (isFastDoubleClick()){
             return;
@@ -763,7 +869,7 @@ public class TranscodeActivity extends BaseActivity {
                 tvTitle.setText(Gutil.parseTimeMillis(addTime + delayTime));
                 seekBar.setProgress(0);
                 mPlayer.seekTo(addTime,MediaPlayer.SEEK_CLOSEST);
-                ivCover.setVisibility(View.GONE);
+//                ivCover.setVisibility(View.GONE);
                 surfaceview.setVisibility(View.VISIBLE);
 //                setVideo(paths.get(videoPage - 2));
                 videoPage--;
@@ -773,13 +879,6 @@ public class TranscodeActivity extends BaseActivity {
                     ivStartFlag.invalidate();
                 } else {
                     ivStartFlag.setVisibility(View.GONE);
-                }
-                if (endPage == videoPage) {
-                    ivEndFlag.setVisibility(View.VISIBLE);
-                    ivEndFlag.setX((end * seekBar.getWidth()) / seekBar.getMax() + seekBar.getX());
-                    ivEndFlag.invalidate();
-                } else {
-                    ivEndFlag.setVisibility(View.GONE);
                 }
                 tvNowParagraph.setText("当前：" + videoPage + "/" + videoCount);
                 break;
@@ -791,7 +890,7 @@ public class TranscodeActivity extends BaseActivity {
                 tvTitle.setText(Gutil.parseTimeMillis(addTime + delayTime));
                 seekBar.setProgress(0);
                 mPlayer.seekTo(addTime,MediaPlayer.SEEK_CLOSEST);
-                ivCover.setVisibility(View.GONE);
+//                ivCover.setVisibility(View.GONE);
                 surfaceview.setVisibility(View.VISIBLE);
 //                setVideo(paths.get(videoPage));
                 videoPage++;
@@ -801,13 +900,6 @@ public class TranscodeActivity extends BaseActivity {
                     ivStartFlag.invalidate();
                 } else {
                     ivStartFlag.setVisibility(View.GONE);
-                }
-                if (endPage == videoPage) {
-                    ivEndFlag.setVisibility(View.VISIBLE);
-                    ivEndFlag.setX((end * seekBar.getWidth()) / seekBar.getMax() + seekBar.getX());
-                    ivEndFlag.invalidate();
-                } else {
-                    ivEndFlag.setVisibility(View.GONE);
                 }
                 tvNowParagraph.setText("当前：" + videoPage + "/" + videoCount);
                 break;
@@ -832,6 +924,8 @@ public class TranscodeActivity extends BaseActivity {
                 if (seekBar != null && !autoStart) {
                     startPage = videoPage;
                     start = seekBar.getProgress();
+                    delayTime=-start-addTime;
+                    tvTitle.setText(Gutil.parseTimeMillis(addTime + start + delayTime));
                     ivStartFlag.setVisibility(View.VISIBLE);
                     ivStartFlag.setX((seekBar.getProgress() * seekBar.getWidth()) / seekBar.getMax() + seekBar.getX() + 2);
                     ivStartFlag.invalidate();
@@ -854,7 +948,7 @@ public class TranscodeActivity extends BaseActivity {
                  return;
                 }
                 surfaceview.setVisibility(View.VISIBLE);
-                ivCover.setVisibility(View.GONE);
+//                ivCover.setVisibility(View.GONE);
                 mPlayer.start();
                 mHandlers.sendEmptyMessageDelayed(2, 100);
 //                mPlayer.start();
@@ -870,21 +964,6 @@ public class TranscodeActivity extends BaseActivity {
             case R.id.tv_after_n:
                 seekBar.incrementProgressBy(StorageCustomerInfoUtil.getIntInfo(context, "fpsJump", 1) * frameRate);
 //                getPic();
-                break;
-            case R.id.tv_end:
-                if (seekBar != null && !autoStart) {
-                    endPage = videoPage;
-                    end = seekBar.getProgress();
-                    if (endPage < startPage) {
-                        return;
-                    } else if (endPage == startPage && end < start) {
-                        return;
-                    }
-                    ivEndFlag.setVisibility(View.VISIBLE);
-                    ivEndFlag.setX((seekBar.getProgress() * seekBar.getWidth()) / seekBar.getMax() + seekBar.getX() + 2);
-                    ivEndFlag.invalidate();
-                    tvTitle.setText(Gutil.parseTimeMillis((endPage-startPage)*time + end - start + delayTime));
-                }
                 break;
             case R.id.tv_recording:
 //                if (deviceLevel==CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY){

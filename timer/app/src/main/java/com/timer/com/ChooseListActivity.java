@@ -43,9 +43,14 @@ public class ChooseListActivity extends BaseActivity {
     RecyclerView rvList;
 
     private ChooseListAdapter localListAdapter;
-    private List<String> mList = new ArrayList<>();
+    private List<String> mList1 = new ArrayList<>();
+    private List<String> mList2 = new ArrayList<>();
+    private List<String> mList3 = new ArrayList<>();
     private List<SportModel> mSportModelList = new ArrayList<>();
-    private boolean first=true;
+    private int times=1;
+    private String id;
+    private int roadNum=0;
+    private long startTimes;
 
     @Override
     public int initLayout() {
@@ -57,16 +62,29 @@ public class ChooseListActivity extends BaseActivity {
         tvTitle.setText("选择比赛");
         tvRight.setVisibility(View.VISIBLE);
         tvRight2.setVisibility(View.VISIBLE);
-        localListAdapter = new ChooseListAdapter(mList);
+        localListAdapter = new ChooseListAdapter(mList1);
         rvList.setLayoutManager(new LinearLayoutManager(context));
         localListAdapter.bindToRecyclerView(rvList);
         localListAdapter.setOnItemClickListener(new BaseQuickAdapter.OnItemClickListener() {
             @Override
             public void onItemClick(BaseQuickAdapter adapter, View view, int position) {
-                if (first) {
-                    loadData2(mList.get(position));
+                if (times==1) {
+                    loadData2(mList1.get(position));
+                }else if (times==2){
+                    id=mSportModelList.get(position).getId();
+                    startTimes=mSportModelList.get(position).getValidityBegin();
+                    roadNum=mSportModelList.get(position).getRoadNum();
+                    mList3.clear();
+                    for (int i=0;i<mSportModelList.get(position).getGroupNum();i++){
+                        mList3.add((i+1)+"");
+                    }
+                    localListAdapter.setNewData(mList3);
+                    times=3;
                 }else {
-                    setResult(RESULT_OK,new Intent().putExtra("id",mSportModelList.get(position).getId()).putExtra("startTime",mSportModelList.get(position).getValidityBegin()));
+                    setResult(RESULT_OK,new Intent().putExtra("id",id)
+                            .putExtra("startTime",startTimes)
+                            .putExtra("group",position+1)
+                    .putExtra("road",roadNum));
                     finish();
                 }
             }
@@ -95,9 +113,9 @@ public class ChooseListActivity extends BaseActivity {
                     ResultModel resultModel = response.body();
                     if (resultModel.getData().getRetCode() == 0) {
                         tvLeft.setVisibility(View.GONE);
-                        mList = JSONArray.parseArray(resultModel.getData().getData(), String.class);
-                        localListAdapter.setNewData(mList);
-                        first=true;
+                        mList1 = JSONArray.parseArray(resultModel.getData().getData(), String.class);
+                        localListAdapter.setNewData(mList1);
+                        times=1;
                     }
                 }
             }
@@ -121,15 +139,15 @@ public class ChooseListActivity extends BaseActivity {
                 if (response.body()!=null) {
                     ResultModel resultModel = response.body();
                     if (resultModel.getData().getRetCode() == 0) {
-                        mList.clear();
-                        first=false;
+                        mList2.clear();
                         tvLeft.setVisibility(View.VISIBLE);
                         tvRight.setVisibility(View.VISIBLE);
                         mSportModelList = JSONArray.parseArray(resultModel.getData().getData(), SportModel.class);
                         for (int i = 0; i < mSportModelList.size(); i++) {
-                            mList.add(mSportModelList.get(i).getTitle());
+                            mList2.add(mSportModelList.get(i).getTitle());
                         }
-                        localListAdapter.setNewData(mList);
+                        localListAdapter.setNewData(mList2);
+                        times=2;
                     }
                 }
             }
@@ -153,7 +171,13 @@ public class ChooseListActivity extends BaseActivity {
     public void onViewClicked(View view) {
         switch (view.getId()) {
             case R.id.tv_left:
-                loadData1();
+                if (times==3){
+
+                }else if ((times==2)){
+                    loadData1();
+                }else {
+                    finish();
+                }
                 break;
             case R.id.tv_right:
                 startActivity(new Intent(context,NewActivity.class));

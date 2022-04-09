@@ -55,14 +55,14 @@ public class LocalListActivity extends BaseActivity {
         localListAdapter.setOnItemClickListener(new BaseQuickAdapter.OnItemClickListener() {
             @Override
             public void onItemClick(BaseQuickAdapter adapter, View view, int position) {
-                setResult(RESULT_OK,new Intent().putExtra("path",Environment.getExternalStorageDirectory()+"/ffmpeg/video/"+mList.get(position)));
+                setResult(RESULT_OK,new Intent().putExtra("path",context.getExternalFilesDir(Environment.DIRECTORY_DCIM)+"/"+mList.get(position)));
                 finish();
             }
         });
         localListAdapter.setOnItemChildClickListener(new BaseQuickAdapter.OnItemChildClickListener() {
             @Override
             public void onItemChildClick(BaseQuickAdapter adapter, View view, int position) {
-                File file =new File(mList.get(position));
+                File file =new File(context.getExternalFilesDir(Environment.DIRECTORY_DCIM)+"/"+mList.get(position));
                 if (file != null && file.exists()&&file.isFile()) {
                     HintModel hintModel=new HintModel();
                     hintModel.setContent("确定要删除这条记录吗？");
@@ -71,14 +71,20 @@ public class LocalListActivity extends BaseActivity {
                         @Override
                         public void onClick() {
                             file.delete();
+                            refreshList();
                         }
                     });
                     hintDialog.show(getSupportFragmentManager(),"");
                 }
             }
         });
+        refreshList();
+    }
+
+    private void refreshList(){
+        mList.clear();
         if (Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
-            File dir = new File(Environment.getExternalStorageDirectory(), "/ffmpeg/video");
+            File dir = context.getExternalFilesDir(Environment.DIRECTORY_DCIM);
             if (dir == null || !dir.exists() || !dir.isDirectory() || dir.listFiles() == null) {
                 return;
             }
