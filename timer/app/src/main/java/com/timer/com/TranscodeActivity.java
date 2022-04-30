@@ -32,6 +32,7 @@ import android.support.v7.widget.RecyclerView;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.Range;
+import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -179,6 +180,7 @@ public class TranscodeActivity extends BaseActivity {
     private String demandId;
     private boolean last, first;
     private long videoTime;
+    private long backTime;
     private long startTime;
     private int group,road;
     private Integer deviceLevel;
@@ -676,6 +678,23 @@ public class TranscodeActivity extends BaseActivity {
 //            ivCover.setImageBitmap(videoFrame);
         }
     }
+
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if (keyCode == KeyEvent.KEYCODE_BACK) {
+            /** 设置双击退出 */
+            long secondtime = System.currentTimeMillis();
+            if (secondtime - backTime > 3000) {
+                Toast.makeText(this, "再按一次返回键退出", Toast.LENGTH_SHORT).show();
+                backTime = System.currentTimeMillis();
+                return true;
+            } else {
+                System.exit(0);
+            }
+        }
+        return super.onKeyDown(keyCode, event);
+    }
+
 
     @RequiresApi(api = Build.VERSION_CODES.O)
     private void setMediaPlay(File file){

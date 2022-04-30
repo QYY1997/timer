@@ -40,7 +40,7 @@ import butterknife.Unbinder;
  * @date : 2021/1/14  17:35
  * @desc :
  */
-class TypeListActivity extends BaseActivity {
+public class TypeListActivity extends BaseActivity {
 
     @BindView(R.id.et_search)
     EditText etSearch;

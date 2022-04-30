@@ -95,9 +95,9 @@ public class HomeNewActivity extends BaseActivity {
     private FragmentManager fm;
     private MainFragment mainFragment = null;
     private ListFragment listFragment = null;
-//    private GameFragment gameFragment = null;
+    private GameFragment gameFragment = null;
     private MyFragment myFragment = null;
-    private VideoFragment videoFragment = null;
+//    private VideoFragment videoFragment = null;
     private int defaultColor = 0xFF000000;
     private long firstime;
     private boolean automatic,notification;
@@ -269,8 +269,8 @@ public class HomeNewActivity extends BaseActivity {
 //        if (gameFragment != null) {
 //            transaction.hide(gameFragment);
 //        }
-        if (videoFragment != null) {
-            transaction.hide(videoFragment);
+        if (gameFragment != null) {
+            transaction.hide(gameFragment);
         }
 
         if (myFragment != null) {
@@ -299,11 +299,11 @@ public class HomeNewActivity extends BaseActivity {
                 tvBill.setTextColor(defaultColor);
                 break;
             case 3:
-                if (videoFragment == null) {
-                    videoFragment = new VideoFragment();
-                    transaction.add(R.id.fl_content, videoFragment);
+                if (gameFragment == null) {
+                    gameFragment = new GameFragment();
+                    transaction.add(R.id.fl_content, gameFragment);
                 } else {
-                    transaction.show(videoFragment);
+                    transaction.show(gameFragment);
                 }
                 tvType.setTextColor(defaultColor);
                 break;

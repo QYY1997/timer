@@ -98,6 +98,20 @@ public class HelperNotificationListenerService extends NotificationListenerServi
             }
             postMoney(notification.when,title, content, money, "支付宝");
         }
+        else if (Constant.LISTENING_TARGET_PKG1.equals(pkg)&&getNotificationTitle(extras).contains("支付成功通知")) {
+            final String money = findMoney(content);
+            if (CommonUtils.isFastDoubleClick(1,1000)){
+                return;
+            }
+            postMoney(notification.when,title, content, money, "支付宝");
+        }
+        else if (Constant.LISTENING_TARGET_PKG1.equals(pkg)&&getNotificationTitle(extras).contains("退款提醒")) {
+            final String money = findMoney(content);
+            if (CommonUtils.isFastDoubleClick(1,1000)){
+                return;
+            }
+            postMoney(notification.when,title, content, "-"+money, "支付宝");
+        }
         else if (Constant.LISTENING_TARGET_PKG2.equals(pkg)&&getNotificationTitle(extras).equals("微信支付")&&getNotificationContent(extras).equals("微信支付凭证")) {
             if (CommonUtils.isFastDoubleClick(2,1000)){
                 return;

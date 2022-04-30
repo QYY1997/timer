@@ -18,6 +18,7 @@ package com.timer.com;
 
 import android.content.Context;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.TextureView;
 
 /**
@@ -64,13 +65,15 @@ public class AutoFitTextureView extends TextureView {
         int height = MeasureSpec.getSize(heightMeasureSpec);
         if (0 == mRatioWidth || 0 == mRatioHeight) {
             setMeasuredDimension(width, height);
-        } else {
+//        } else  if (mRatioWidth<=width&&mRatioHeight<=height){
+//            setMeasuredDimension(mRatioWidth, mRatioHeight);
+        }else {
             if (width < height * mRatioWidth / mRatioHeight) {
+                Log.i("TAG", "onMeasure:屏幕大小："+width+"*"+height+",拍摄大小："+mRatioWidth+"*"+mRatioHeight);
                 setMeasuredDimension(width, width * mRatioHeight / mRatioWidth);
             } else {
                 setMeasuredDimension(height * mRatioWidth / mRatioHeight, height);
             }
         }
     }
-
 }

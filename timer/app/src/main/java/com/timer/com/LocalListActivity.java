@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
 
@@ -12,6 +13,7 @@ import com.chad.library.adapter.base.BaseQuickAdapter;
 import com.timer.com.bean.HintModel;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -81,7 +83,7 @@ public class LocalListActivity extends BaseActivity {
         refreshList();
     }
 
-    private void refreshList(){
+    private void refreshList() {
         mList.clear();
         if (Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
             File dir = context.getExternalFilesDir(Environment.DIRECTORY_DCIM);
@@ -89,7 +91,7 @@ public class LocalListActivity extends BaseActivity {
                 return;
             }
             for (int i=0;i<dir.listFiles().length;i++) {
-                if (dir.listFiles()[i].isFile()) {
+                if (dir.listFiles()[i].isFile()&&getFileSize(dir.listFiles()[i])>0) {
                     mList.add(dir.listFiles()[i].getName());
                 }
                 if (i==dir.listFiles().length-1){
@@ -99,7 +101,19 @@ public class LocalListActivity extends BaseActivity {
             localListAdapter.setNewData(mList);
         }
     }
-
+    private long getFileSize(File file) {
+        long size = 0;
+        try {
+            if (file.exists()) {
+                FileInputStream fis = null;
+                fis = new FileInputStream(file);
+                size = fis.available();
+            }
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+        return size;
+    }
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);

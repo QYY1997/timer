@@ -130,14 +130,6 @@ public class Camera2VideoActivity extends BaseActivity
     TextView recordController;
     @BindView(R.id.tv_video_time)
     TextView tvVideoTime;
-    @BindView(R.id.tv_left)
-    TextView tvLeft;
-    @BindView(R.id.tv_title)
-    TextView tvTitle;
-    @BindView(R.id.tv_right)
-    TextView tvRight;
-    @BindView(R.id.tv_right2)
-    TextView tvRight2;
 
     /**
      * Button to record video
@@ -409,7 +401,6 @@ public class Camera2VideoActivity extends BaseActivity
             shootingDelay = 0;
         }
         recordController.setOnClickListener(this::onClick);
-        tvLeft.setOnClickListener(this::onClick);
         mCamcorderProfile = CamcorderProfile.get(Camera.CameraInfo.CAMERA_FACING_BACK, CamcorderProfile.QUALITY_HIGH);
         if ( StorageCustomerInfoUtil.getIntInfo(context, "fps", 30)>30) {
             if (CamcorderProfile.hasProfile(CamcorderProfile.QUALITY_HIGH_SPEED_1080P)) {
@@ -469,9 +460,6 @@ public class Camera2VideoActivity extends BaseActivity
                 } else {
                     mHandlers.sendEmptyMessage(1);
                 }
-                break;
-            case R.id.tv_left:
-                finish();
                 break;
         }
     }
@@ -601,9 +589,29 @@ public class Camera2VideoActivity extends BaseActivity
         return true;
     }
 
+
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         switch (keyCode) {
+//            case KeyEvent.KEYCODE_BACK:
+//                ExitDialog exitDialog=new ExitDialog();
+//                exitDialog.setOnClickListener(new ExitDialog.OnClickListener() {
+//                    @Override
+//                    public void onClick() {
+//                        if (mMediaRecorder!=null) {
+//                            mMediaRecorder.release();
+//                            mHandlers.removeMessages(2);
+//                            File file = new File(mNextVideoAbsolutePath);
+//                            Log.i(TAG, "onClick: "+file.getAbsolutePath());
+//                            if (file != null) {
+//                                file.delete();
+//                            }
+//                        }
+//                        finish();
+//                    }
+//                });
+//                exitDialog.show(getSupportFragmentManager(),"");
+//                break;
             case KeyEvent.KEYCODE_VOLUME_UP:
             case KeyEvent.KEYCODE_VOLUME_DOWN:
                 if (mIsRecordingVideo) {
@@ -822,7 +830,17 @@ public class Camera2VideoActivity extends BaseActivity
             SurfaceTexture texture = mTextureView.getSurfaceTexture();
             assert texture != null;
             texture.setDefaultBufferSize(mPreviewSize.getWidth(), mPreviewSize.getHeight());
+            Long km = StorageCustomerInfoUtil.getLongInfo(context, "km", (long) 0);
+            long min = StorageCustomerInfoUtil.getLongInfo(context, "KMmin", (long) 1000 * 1000);
+            long max = StorageCustomerInfoUtil.getLongInfo(context, "KMmax", (long) 10 * 1000 * 1000);
+            if (km > 0) {
+                km = Math.max(Math.min(max, km), min);
+
+            }
             mPreviewBuilder = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_RECORD);
+            if (km>0){
+                mPreviewBuilder.set(CaptureRequest.SENSOR_EXPOSURE_TIME, km);
+            }
             mPreviewBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO);
             mPreviewBuilder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
             mPreviewBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, fps);
@@ -913,7 +931,7 @@ public class Camera2VideoActivity extends BaseActivity
                         mPreviewBuilder.set(CaptureRequest.LENS_FOCUS_DISTANCE, result.get(CaptureResult.LENS_FOCUS_DISTANCE));
                         mPreviewBuilder.set(CaptureRequest.CONTROL_AE_EXPOSURE_COMPENSATION, result.get(CaptureResult.CONTROL_AE_EXPOSURE_COMPENSATION));
                         mPreviewBuilder.set(CaptureRequest.SENSOR_SENSITIVITY, result.get(CaptureResult.SENSOR_SENSITIVITY));
-                        mPreviewBuilder.set(CaptureRequest.SENSOR_EXPOSURE_TIME, km);
+                        mPreviewBuilder.set(CaptureRequest.SENSOR_EXPOSURE_TIME, result.get(CaptureResult.SENSOR_EXPOSURE_TIME));
                         mPreviewBuilder.set(CaptureRequest.SENSOR_FRAME_DURATION, result.get(CaptureResult.SENSOR_FRAME_DURATION));
                     }
                     mPreviewBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, fps);
@@ -986,9 +1004,7 @@ public class Camera2VideoActivity extends BaseActivity
     @Override
     protected void onDestroy() {
         super.onDestroy();
-
         if (mMediaRecorder!=null) {
-            mMediaRecorder.stop();
             mMediaRecorder.release();
             mHandlers.removeMessages(2);
             if (mIsRecordingVideo) {
